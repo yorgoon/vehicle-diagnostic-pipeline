@@ -141,7 +141,33 @@
             {activeTab === 'overview' && (
               <>
                 {/* Stage 1: Inputs */}
-                <Stage number="1" title="Inputs">
+                <Stage number="1" title="Inputs"
+                  details={
+                    <div className="space-y-3">
+                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                        <div className="text-yellow-400 text-xs font-semibold mb-2">❓ Open Questions</div>
+                        <div className="text-xs text-slate-300 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>What audio duration/quality is sufficient for reliable diagnosis?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Which OBD-II PIDs are essential vs nice-to-have for N55?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How should we handle missing inputs (no OBD, no audio, etc.)?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Can phone microphone capture useful diagnostic audio, or need dedicated hardware?</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                >
                   <div className="grid grid-cols-4 gap-2">
                     {[
                       { icon: '🎤', title: 'Audio', sub: '30s @ 16kHz' },
@@ -213,6 +239,36 @@
                           <div>• <span className="text-purple-300">FM alone</span>: Might say "knock" but can't verify it's from engine</div>
                           <div>• <span className="text-green-300">Signal alone</span>: Knows frequency, but can't distinguish fault types</div>
                           <div>• <span className="text-blue-300">Combined</span>: "Sounds like rod knock AND correlates with crank speed"</div>
+                        </div>
+                      </div>
+
+                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                        <div className="text-yellow-400 text-xs font-semibold mb-2">❓ Open Questions</div>
+                        <div className="text-xs text-slate-300 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Can CLAP/PANNs extract meaningful features from vehicle sounds, or is it too domain-specific?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Do audio foundation models distinguish between rod knock vs lifter tick vs HPFP tick?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Zero-shot sufficient, or must we fine-tune on automotive audio?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How do embeddings cluster for different fault types? Clear separation or overlap?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Is RPM correlation alone enough to rule out non-engine sounds?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>What if FM fails completely - can heuristics + LLM reasoning be a viable fallback?</div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -355,6 +411,32 @@
                           <div className="mt-2 text-slate-400">→ Passed to Stage 4 for deductive filtering</div>
                         </div>
                       </div>
+
+                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                        <div className="text-yellow-400 text-xs font-semibold mb-2">❓ Open Questions</div>
+                        <div className="text-xs text-slate-300 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>What data structure best represents fault relationships? DAG, tree, or flat lookup?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How do we gather reliable causal chains for automotive faults?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Should knowledge base be hand-curated, LLM-generated, or extracted from repair manuals?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How deep should root cause tracing go? When to stop?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How to handle faults not in the knowledge base (unknown unknowns)?</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   }
                 >
@@ -488,6 +570,28 @@
                             <div>• Have required evidence present</div>
                           </div>
                           <div className="mt-2 text-slate-400">→ Passed to Stage 5 for abductive ranking</div>
+                        </div>
+                      </div>
+
+                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                        <div className="text-yellow-400 text-xs font-semibold mb-2">❓ Open Questions</div>
+                        <div className="text-xs text-slate-300 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How strict should physics constraints be? Allow tolerance or hard cutoff?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>What if signal analysis is uncertain (noisy RPM correlation)?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How to handle edge cases where constraints might incorrectly reject valid hypotheses?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Should LLM ever be able to override deductive rules with strong justification?</div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -642,6 +746,32 @@
                           <div className="mt-2 text-slate-400">→ Passed to Stage 6 for fallback handling</div>
                         </div>
                       </div>
+
+                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                        <div className="text-yellow-400 text-xs font-semibold mb-2">❓ Open Questions</div>
+                        <div className="text-xs text-slate-300 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How to weight different evidence sources (audio vs OBD vs user report)?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Can LLM reliably perform abductive reasoning, or does it hallucinate explanations?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How to calibrate confidence scores to match real-world accuracy?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>What's the right balance between symbolic scoring and LLM judgment?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How to handle ties or near-ties in confidence?</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   }
                 >
@@ -780,6 +910,28 @@
                           <div className="mt-2 text-slate-400">→ Passed to Stage 7 for output formatting</div>
                         </div>
                       </div>
+
+                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                        <div className="text-yellow-400 text-xs font-semibold mb-2">❓ Open Questions</div>
+                        <div className="text-xs text-slate-300 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>What confidence thresholds trigger each fallback level?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Is category-level diagnosis actually useful to users/mechanics?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How to communicate uncertainty without losing user trust?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Should we show multiple candidates at same level, or just top one?</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   }
                 >
@@ -800,7 +952,33 @@
                 <Arrow />
 
                 {/* Stage 7: Output */}
-                <Stage number="7" title="Diagnosis Output" type="hybrid">
+                <Stage number="7" title="Diagnosis Output" type="hybrid"
+                  details={
+                    <div className="space-y-3">
+                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                        <div className="text-yellow-400 text-xs font-semibold mb-2">❓ Open Questions</div>
+                        <div className="text-xs text-slate-300 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>What information is most actionable for end users vs mechanics?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>How to present contradicting evidence without confusing users?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>Should severity/urgency be system-determined or context-dependent?</div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-yellow-500">•</span>
+                            <div>What verification steps are realistic for non-mechanics to perform?</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                >
                   <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-lg p-4 border border-blue-500">
                     <div className="flex justify-between items-center mb-3">
                       <div className="text-white font-bold">🔧 Rod Bearing Wear</div>
