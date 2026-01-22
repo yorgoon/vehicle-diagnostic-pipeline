@@ -638,6 +638,32 @@
               <strong>PhysicsAutoencoder</strong> trained on normal data detects deviations without labeled fault data.
             </div>
           </div>
+
+          {/* Multi-Modal Evidence Insight */}
+          <div className="bg-gradient-to-r from-blue-900/30 to-cyan-900/30 rounded-lg p-3 border border-cyan-500/50 mt-3">
+            <div className="text-cyan-300 font-bold">Why Multi-Modal Matters</div>
+            <div className="text-slate-300 mt-1">
+              <strong>Not all faults show in vibration!</strong> The system uses <span className="text-yellow-300">ALL evidence sources</span>:
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-slate-900/50 rounded p-2">
+                <div className="text-green-400 font-semibold">Vibration Detects:</div>
+                <div className="text-slate-400">• Rod/Main Bearing</div>
+                <div className="text-slate-400">• Timing Chain</div>
+                <div className="text-slate-400">• VANOS/Valvetrain</div>
+              </div>
+              <div className="bg-slate-900/50 rounded p-2">
+                <div className="text-blue-400 font-semibold">OBD/DTC Detects:</div>
+                <div className="text-slate-400">• Boost Leak (P0299)</div>
+                <div className="text-slate-400">• Vacuum Leak (P0171)</div>
+                <div className="text-slate-400">• Misfire (P0300)</div>
+              </div>
+            </div>
+            <div className="text-slate-400 mt-2 text-xs">
+              Example: Boost leak has <span className="text-green-300">NORMAL vibration</span> but is detected via <span className="text-blue-300">DTCs + fuel trims + user "whooshing sound"</span>.
+              The KG combines ALL symptoms to find the best explanation.
+            </div>
+          </div>
         </div>
       );
     };
@@ -664,6 +690,7 @@
         { stage: '2b', q: 'Timing chain simulation?', status: 'resolved', answer: 'Chain mesh freq (34×cam_RPM) + AM envelope at 0.5x' },
         { stage: '2b', q: 'VANOS rattle simulation?', status: 'resolved', answer: 'Hydraulic burst pattern (4-knock) + cam rumble tone' },
         { stage: '2b', q: 'Valvetrain tick simulation?', status: 'resolved', answer: 'Sharp transients → strong 0.5x harmonics' },
+        { stage: '2', q: 'Why multi-modal (not just vibration)?', status: 'resolved', answer: 'Not all faults show in vibration! Boost/vacuum leak, misfire detected via OBD+DTCs+user NLU' },
         { stage: '2', q: 'Fusion weighting: static or learned attention?', status: 'open', answer: null },
         { stage: '3', q: 'Graph storage: Neo4j vs in-memory?', status: 'resolved', answer: 'In-memory Python classes. (Sufficient for <100 nodes)' },
         { stage: '3', q: 'KG population: manual vs LLM extraction?', status: 'resolved', answer: 'Manual ontology (high precision defined in code, extensible per vehicle)' },
