@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vehicle Diagnostic Pipeline v3.2</title>
+  <title>Vehicle Diagnostic Pipeline v3.3</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { margin: 0; }
-  </style>
+  <style>body { margin: 0; }</style>
 </head>
 <body>
   <div id="root"></div>
@@ -18,799 +16,422 @@
     const { useState } = React;
 
     const Arrow = () => (
-      <div className="flex justify-center py-2">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2">
+      <div className="flex justify-center py-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2">
           <path d="M12 5v14M5 12l7 7 7-7"/>
         </svg>
       </div>
     );
 
-    const ExpandIcon = ({ expanded }) => (
-      <svg 
-        width="16" 
-        height="16" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2"
-        className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-      >
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
-    );
+    const ValidationBadge = ({ status }) => {
+      const styles = {
+        validated: 'bg-green-500/20 text-green-400 border-green-500/50',
+        partial: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50',
+        unvalidated: 'bg-slate-500/20 text-slate-400 border-slate-500/50',
+      };
+      const labels = {
+        validated: '✓ Validated',
+        partial: '◐ Partial',
+        unvalidated: '○ Pending',
+      };
+      return (
+        <span className={`text-xs px-2 py-0.5 rounded border ${styles[status]}`}>
+          {labels[status]}
+        </span>
+      );
+    };
 
-    const Stage = ({ number, title, type, children, details, defaultExpanded = false }) => {
-      const [expanded, setExpanded] = useState(defaultExpanded);
-      
-      const borderColor = type ? {
-        neural: 'border-purple-500',
-        symbolic: 'border-green-500',
-        hybrid: 'border-blue-500',
-      }[type] : 'border-slate-600';
-      
-      const typeBadge = type ? {
-        neural: { text: 'Neural', color: 'bg-purple-500/20 text-purple-300' },
-        symbolic: { text: 'Symbolic', color: 'bg-green-500/20 text-green-300' },
-        hybrid: { text: 'Hybrid', color: 'bg-blue-500/20 text-blue-300' },
-      }[type] : null;
+    const TypeBadge = ({ type }) => {
+      const styles = {
+        neural: 'bg-purple-500/20 text-purple-300',
+        symbolic: 'bg-green-500/20 text-green-300',
+        hybrid: 'bg-blue-500/20 text-blue-300',
+      };
+      return type ? (
+        <span className={`text-xs px-2 py-0.5 rounded ${styles[type]}`}>
+          {type.charAt(0).toUpperCase() + type.slice(1)}
+        </span>
+      ) : null;
+    };
+
+    // Executive View - Simple flow
+    const ExecutiveView = () => {
+      const stages = [
+        { n: '1', title: 'Inputs', desc: 'Vibration + OBD + Audio + User symptoms', validation: 'validated', note: 'Sensor spec done' },
+        { n: '2', title: 'Evidence Extraction', desc: 'FFT/Mel-spec features → CNN encoder', validation: 'validated', note: 'MAFAULDA: 98.7%' },
+        { n: '2b', title: 'OBD Simulation', desc: 'Synthetic N55 faults validated vs real data', validation: 'validated', note: 'vs EngineFaultDB: Δ5%' },
+        { n: '3', title: 'Knowledge Graph Query', desc: 'Fault KB → candidate hypotheses', validation: 'unvalidated' },
+        { n: '4', title: 'Deductive Filtering', desc: 'Hard constraints eliminate impossible faults', validation: 'unvalidated' },
+        { n: '5', title: 'Abductive Ranking', desc: 'LLM + RAG ranks by evidence coverage', validation: 'unvalidated' },
+        { n: '6', title: 'Hierarchical Fallback', desc: 'Specific → Category → System → "See mechanic"', validation: 'unvalidated' },
+        { n: '7', title: 'Output', desc: 'Diagnosis + confidence + reasoning + action', validation: 'unvalidated' },
+      ];
 
       return (
-        <div className={`bg-slate-900/50 rounded-xl border-2 ${borderColor} overflow-hidden`}>
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="bg-slate-700 text-slate-300 text-xs font-bold px-2 py-0.5 rounded">{number}</span>
-                <span className="text-blue-400 text-sm font-semibold uppercase tracking-wide">{title}</span>
+        <div className="space-y-1">
+          {stages.map((s, i) => (
+            <div key={i}>
+              <div className="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="bg-slate-700 text-slate-300 text-xs font-bold w-6 h-6 rounded flex items-center justify-center">{s.n}</span>
+                  <div>
+                    <div className="text-white font-medium text-sm">{s.title}</div>
+                    <div className="text-slate-400 text-xs">{s.desc}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {s.note && <span className="text-green-400 text-xs">{s.note}</span>}
+                  <ValidationBadge status={s.validation} />
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {typeBadge && (
-                  <span className={`text-xs px-2 py-0.5 rounded ${typeBadge.color}`}>{typeBadge.text}</span>
-                )}
+              {i < stages.length - 1 && <Arrow />}
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // Engineering View - Detailed
+    const EngineeringView = () => {
+      const [expanded, setExpanded] = useState(null);
+
+      const stages = [
+        {
+          n: '1', title: 'Inputs', type: null, validation: 'validated',
+          content: (
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              <div className="bg-green-900/30 border border-green-500/50 rounded p-2 text-center">
+                <div className="text-lg">📳</div>
+                <div className="text-white font-medium">Vibration</div>
+                <div className="text-green-400">Primary</div>
+              </div>
+              <div className="bg-slate-800 rounded p-2 text-center">
+                <div className="text-lg">📊</div>
+                <div className="text-white font-medium">OBD-II</div>
+                <div className="text-slate-500">Context</div>
+              </div>
+              <div className="bg-slate-800 rounded p-2 text-center opacity-60">
+                <div className="text-lg">🎤</div>
+                <div className="text-white font-medium">Audio</div>
+                <div className="text-red-400">Demoted</div>
+              </div>
+              <div className="bg-slate-800 rounded p-2 text-center">
+                <div className="text-lg">💬</div>
+                <div className="text-white font-medium">User</div>
+                <div className="text-slate-500">Symptoms</div>
               </div>
             </div>
-            {children}
-          </div>
-          
-          {details && (
-            <>
-              <button
-                onClick={() => setExpanded(!expanded)}
-                className="w-full px-4 py-2 bg-slate-800/50 border-t border-slate-700 flex items-center justify-between text-xs text-slate-400 hover:bg-slate-800 transition"
-              >
-                <span>Technical Details</span>
-                <ExpandIcon expanded={expanded} />
-              </button>
-              
-              {expanded && (
-                <div className="px-4 py-3 bg-slate-800/30 border-t border-slate-700">
-                  {details}
+          ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-2">
+              <div className="bg-green-900/20 border border-green-500/30 rounded p-2">
+                <span className="text-green-400 font-semibold">Sensor spec:</span> ADXL1002 MEMS, 50kHz, dual placement (valve cover + oil pan)
+              </div>
+              <div className="bg-red-900/20 border border-red-500/30 rounded p-2">
+                <span className="text-red-400 font-semibold">Audio demoted:</span> AST fusion underperformed single-sensor baseline. Domain gap too large.
+              </div>
+            </div>
+          )
+        },
+        {
+          n: '2', title: 'Evidence Extraction', type: 'hybrid', validation: 'validated',
+          content: (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-green-900/30 border border-green-500/50 rounded p-2">
+                <div className="text-green-400 font-semibold mb-1">Vibration → FFT/Mel-spec</div>
+                <div className="text-slate-400">Stable RPM: FFT sufficient (85.6%)</div>
+                <div className="text-slate-400">Variable RPM: WSST if needed</div>
+              </div>
+              <div className="bg-purple-900/30 border border-purple-500/50 rounded p-2">
+                <div className="text-purple-400 font-semibold mb-1">Classifier</div>
+                <div className="text-slate-400">MLP or SVM</div>
+                <div className="text-green-400">MAFAULDA: 98.72%</div>
+              </div>
+            </div>
+          ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-2">
+              <div className="bg-slate-900 rounded p-2">
+                <div className="text-slate-400 mb-1">MAFAULDA Sweep Results (72 configs):</div>
+                <div>• Single sensor (col2) + mel-spec + MLP → <span className="text-green-400">98.72%</span></div>
+                <div>• Dual sensor fusion only +0.25% gain — not worth complexity</div>
+                <div>• AST foundation model: <span className="text-red-400">failed</span> (domain gap)</div>
+              </div>
+              <div className="bg-yellow-900/20 border border-yellow-500/30 rounded p-2">
+                <span className="text-yellow-400 font-semibold">Gap:</span> "Normal" class is bottleneck. Fusion adds noise for healthy samples.
+              </div>
+            </div>
+          )
+        },
+        {
+          n: '2b', title: 'OBD Simulation', type: 'symbolic', validation: 'validated',
+          content: (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-green-900/30 border border-green-500/50 rounded p-2">
+                <div className="text-green-400 font-semibold mb-1">N55 Synthetic Generator</div>
+                <div className="text-slate-400">Misfire, Vacuum Leak, O2 Degradation</div>
+                <div className="text-slate-400">Vehicle-to-vehicle variation ±4%</div>
+              </div>
+              <div className="bg-green-900/30 border border-green-500/50 rounded p-2">
+                <div className="text-green-400 font-semibold mb-1">Validated vs EngineFaultDB</div>
+                <div className="text-slate-400">Synthetic: 69.6% | Real: 74.1%</div>
+                <div className="text-green-400">Gap: only 4.5%</div>
+              </div>
+            </div>
+          ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-2">
+              <div className="bg-slate-900 rounded p-2">
+                <div className="text-slate-400 mb-1">Validation Results:</div>
+                <div>• Compared to IEEE peer-reviewed EngineFaultDB (55,999 samples)</div>
+                <div>• Confusion patterns match (healthy↔misfire, F2↔F3)</div>
+                <div>• Within published benchmarks (70-85% for multi-fault)</div>
+              </div>
+              <div className="bg-green-900/20 border border-green-500/30 rounded p-2">
+                <span className="text-green-400 font-semibold">Status:</span> Synthetic OBD data validated as realistic for ML training
+              </div>
+            </div>
+          )
+        },
+        {
+          n: '3', title: 'Knowledge Graph Query', type: 'symbolic', validation: 'unvalidated',
+          content: (
+            <div className="bg-slate-800 rounded p-2 text-xs">
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <span className="bg-blue-900/50 border border-blue-500/50 rounded px-2 py-1 text-blue-300">evidence</span>
+                <span className="text-slate-500">→</span>
+                <span className="bg-yellow-900/50 border border-yellow-500/50 rounded px-2 py-1 text-yellow-300">symptom</span>
+                <span className="text-slate-500">→</span>
+                <span className="bg-green-900/50 border border-green-500/50 rounded px-2 py-1 text-green-300">fault candidates</span>
+              </div>
+            </div>
+          ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-2">
+              <div className="bg-slate-900 rounded p-2">
+                <div className="text-slate-400 mb-1">Graph Schema:</div>
+                <div className="flex flex-wrap gap-1">
+                  {['Component', 'System', 'Symptom', 'Fault', 'Evidence', 'Procedure'].map(n => (
+                    <span key={n} className="bg-slate-700 px-1.5 py-0.5 rounded text-xs">{n}</span>
+                  ))}
                 </div>
-              )}
-            </>
-          )}
+              </div>
+              <div className="text-slate-500">Storage: Neo4j or in-memory for edge. GNN deferred to scale phase.</div>
+            </div>
+          )
+        },
+        {
+          n: '4', title: 'Deductive Filtering', type: 'symbolic', validation: 'unvalidated',
+          content: (
+            <div className="bg-slate-800 rounded p-2 text-xs">
+              <div className="text-green-400 font-semibold mb-1">Hard Constraints (cannot override)</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-slate-400">• Platform: N55 has chain, not belt</div>
+                <div className="text-slate-400">• Physics: Rod knock ∝ crank speed</div>
+              </div>
+            </div>
+          ),
+          details: null
+        },
+        {
+          n: '5', title: 'Abductive Ranking', type: 'hybrid', validation: 'unvalidated',
+          content: (
+            <div className="bg-slate-800 rounded p-2 text-xs">
+              <div className="text-blue-400 font-semibold mb-1">LLM + RAG: "What explains ALL evidence?"</div>
+              <div className="space-y-1">
+                {[
+                  { fault: 'Rod knock', score: '0.72', top: true },
+                  { fault: 'Main bearing', score: '0.58', top: false },
+                ].map((h, i) => (
+                  <div key={i} className={`flex justify-between p-1 rounded ${h.top ? 'bg-blue-900/30' : 'bg-slate-900'}`}>
+                    <span className={h.top ? 'text-white' : 'text-slate-400'}>{h.fault}</span>
+                    <span className={h.top ? 'text-green-400' : 'text-slate-500'}>{h.score}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-2">
+              <div className="bg-slate-900 rounded p-2">
+                <div className="text-slate-400 mb-1">Hallucination mitigation:</div>
+                <div>• RAG grounding in repair manuals</div>
+                <div>• Role-Rule-Format prompting</div>
+                <div>• Symbolic verification against Stage 4</div>
+              </div>
+              <div className="text-slate-500">LLM: Cloud API or Qwen2.5-7B on-device (TBD)</div>
+            </div>
+          )
+        },
+        {
+          n: '6', title: 'Hierarchical Fallback', type: 'symbolic', validation: 'unvalidated',
+          content: (
+            <div className="bg-slate-800 rounded p-2 text-xs">
+              <div className="flex items-center gap-2 justify-center">
+                <span className="text-green-400">rod_knock</span>
+                <span className="text-slate-500">→</span>
+                <span className="text-yellow-400">bottom_end</span>
+                <span className="text-slate-500">→</span>
+                <span className="text-orange-400">engine</span>
+                <span className="text-slate-500">→</span>
+                <span className="text-red-400">mechanic</span>
+              </div>
+            </div>
+          ),
+          details: null
+        },
+        {
+          n: '7', title: 'Output', type: 'hybrid', validation: 'unvalidated',
+          content: (
+            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded p-3 border border-blue-500/50 text-xs">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-white font-bold">🔧 Rod Bearing Wear</span>
+                <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">72%</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-slate-300">
+                <div><span className="text-green-400">✓</span> Vibration: crank corr 0.94</div>
+                <div><span className="text-yellow-400">⚠</span> Oil pressure: normal</div>
+              </div>
+            </div>
+          ),
+          details: null
+        },
+      ];
+
+      return (
+        <div className="space-y-2">
+          {stages.map((s, i) => (
+            <div key={i}>
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700 overflow-hidden">
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-slate-700 text-slate-300 text-xs font-bold w-6 h-6 rounded flex items-center justify-center">{s.n}</span>
+                      <span className="text-blue-400 text-sm font-semibold">{s.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <TypeBadge type={s.type} />
+                      <ValidationBadge status={s.validation} />
+                    </div>
+                  </div>
+                  {s.content}
+                </div>
+                {s.details && (
+                  <>
+                    <button
+                      onClick={() => setExpanded(expanded === i ? null : i)}
+                      className="w-full px-3 py-1.5 bg-slate-800/50 border-t border-slate-700 flex items-center justify-between text-xs text-slate-500 hover:bg-slate-800"
+                    >
+                      <span>Details</span>
+                      <span>{expanded === i ? '−' : '+'}</span>
+                    </button>
+                    {expanded === i && (
+                      <div className="px-3 py-2 bg-slate-800/30 border-t border-slate-700">
+                        {s.details}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+              {i < stages.length - 1 && <Arrow />}
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // Research Log - Moved open questions here
+    const ResearchLog = () => {
+      const items = [
+        { stage: '1', q: 'Accelerometer placement: engine block vs. chassis vs. multiple?', status: 'resolved', answer: 'Dual: valve cover + oil pan' },
+        { stage: '1', q: 'Sampling rate: 10kHz or 50kHz?', status: 'resolved', answer: '50kHz for bearing faults' },
+        { stage: '1', q: 'Audio value-add vs. vibration alone?', status: 'resolved', answer: 'Minimal. AST underperformed. Demoted.' },
+        { stage: '2', q: 'WSST vs WST vs FFT?', status: 'resolved', answer: 'FFT sufficient for stable RPM (85.6%). WSST for variable.' },
+        { stage: '2', q: 'Best feature type for vibration?', status: 'resolved', answer: 'Mel-spectrogram > MFCC > classical FFT' },
+        { stage: '2', q: 'Best classifier for MAFAULDA?', status: 'resolved', answer: 'MLP (98.72%) ≈ SVM > RF > LR' },
+        { stage: '2', q: 'Sensor fusion value?', status: 'resolved', answer: 'Only +0.25% gain. Not worth complexity.' },
+        { stage: '2b', q: 'OBD simulation realistic?', status: 'resolved', answer: 'Yes. 69.6% vs 74.1% real (EngineFaultDB)' },
+        { stage: '2b', q: 'Synthetic fault signatures valid?', status: 'resolved', answer: 'Confusion patterns match real data' },
+        { stage: '2', q: 'Paderborn AST embeddings?', status: 'resolved', answer: 'Poor clustering. Domain gap too large.' },
+        { stage: '2', q: 'Fusion weighting: static or learned attention?', status: 'open', answer: null },
+        { stage: '3', q: 'Graph storage: Neo4j vs in-memory?', status: 'open', answer: null },
+        { stage: '3', q: 'KG population: manual vs LLM extraction?', status: 'open', answer: null },
+        { stage: '5', q: 'LLM: cloud API vs on-device SLM?', status: 'open', answer: null },
+        { stage: '5', q: 'Confidence calibration method?', status: 'open', answer: null },
+      ];
+
+      return (
+        <div className="space-y-2">
+          {items.map((item, i) => (
+            <div key={i} className={`rounded p-2 text-xs ${item.status === 'resolved' ? 'bg-green-900/20 border border-green-500/30' : 'bg-slate-800'}`}>
+              <div className="flex items-start gap-2">
+                <span className="bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded text-xs">S{item.stage}</span>
+                <div className="flex-1">
+                  <div className={item.status === 'resolved' ? 'text-slate-400 line-through' : 'text-slate-300'}>{item.q}</div>
+                  {item.answer && <div className="text-green-400 mt-1">→ {item.answer}</div>}
+                </div>
+                <span className={`px-1.5 py-0.5 rounded text-xs ${item.status === 'resolved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                  {item.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       );
     };
 
     function Pipeline() {
-      const [activeTab, setActiveTab] = useState('overview');
+      const [view, setView] = useState('executive');
 
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 p-6">
-          <h1 className="text-2xl font-bold text-center mb-1 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Vehicle Diagnostic Pipeline v3.2
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 p-4">
+          <h1 className="text-xl font-bold text-center mb-1 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            Vehicle Diagnostic Pipeline v3.3
           </h1>
-          <p className="text-center text-slate-500 text-sm mb-2">Neuro-Symbolic Architecture + Knowledge Graph</p>
-          <p className="text-center text-yellow-500/70 text-xs mb-4">Early Development</p>
-          
-          {/* Legend */}
-          <div className="flex justify-center gap-4 mb-6 text-xs">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-purple-500"></div>
-              <span className="text-slate-400">Neural</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-green-500"></div>
-              <span className="text-slate-400">Symbolic</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-blue-500"></div>
-              <span className="text-slate-400">Hybrid</span>
-            </div>
-          </div>
+          <p className="text-center text-slate-500 text-xs mb-4">Neuro-Symbolic Architecture</p>
 
-          {/* Tabs */}
-          <div className="flex justify-center gap-2 mb-6">
-            {['overview', 'output'].map(tab => (
+          {/* View Toggle */}
+          <div className="flex justify-center gap-1 mb-4">
+            {['executive', 'engineering', 'research'].map(v => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                  activeTab === tab 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                  view === v ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                 }`}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {v.charAt(0).toUpperCase() + v.slice(1)}
               </button>
             ))}
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-3">
-            
-            {activeTab === 'overview' && (
-              <>
-                {/* Stage 1: Inputs */}
-                <Stage number="1" title="Inputs"
-                  details={
-                    <div className="space-y-3">
-                      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
-                        <div className="text-blue-400 text-xs font-semibold mb-2">Sensor Strategy</div>
-                        <div className="text-xs text-slate-300 space-y-2">
-                          <div className="flex items-start gap-2">
-                            <span className="text-green-400 font-bold">PRIMARY:</span>
-                            <div>Vibration (accelerometer) — physics-grounded, crank-speed correlation</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-400 font-bold">SECONDARY:</span>
-                            <div>Audio — semantic layer for distinctive sounds (belt squeal, HPFP tick)</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-slate-400 font-bold">CONTEXT:</span>
-                            <div>OBD-II — RPM for correlation, DTCs, fuel trims, validation</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
-                        <div className="text-yellow-400 text-xs font-semibold mb-2">⚠ Open Questions</div>
-                        <div className="text-xs text-slate-300 space-y-2">
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>Accelerometer placement: engine block vs. chassis vs. multiple points?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>Sampling rate requirement: 10kHz sufficient or need 50kHz?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>Which OBD-II PIDs are essential vs nice-to-have for N55?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>Audio value-add: what faults does audio catch that vibration misses?</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className="grid grid-cols-5 gap-2">
-                    {[
-                      { icon: '📳', title: 'Vibration', sub: 'Primary', highlight: true },
-                      { icon: '🎤', title: 'Audio', sub: 'Secondary', highlight: false },
-                      { icon: '📊', title: 'OBD-II', sub: 'Context', highlight: false },
-                      { icon: '💬', title: 'User', sub: 'Symptoms', highlight: false },
-                      { icon: '🚗', title: 'Vehicle', sub: 'N55 / 85k', highlight: false },
-                    ].map((item, i) => (
-                      <div key={i} className={`rounded-lg p-3 text-center ${item.highlight ? 'bg-green-900/30 border border-green-500/50' : 'bg-slate-800'}`}>
-                        <div className="text-xl mb-1">{item.icon}</div>
-                        <div className="text-white text-xs font-semibold">{item.title}</div>
-                        <div className={`text-xs ${item.highlight ? 'text-green-400' : 'text-slate-500'}`}>{item.sub}</div>
-                      </div>
-                    ))}
-                  </div>
-                </Stage>
-
-                <Arrow />
-
-                {/* Stage 2: Evidence Extraction */}
-                <Stage 
-                  number="2" 
-                  title="Evidence Extraction" 
-                  type="hybrid"
-                  details={
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                          <div className="text-green-400 text-xs font-semibold mb-2">📳 Vibration Processing (Primary)</div>
-                          <div className="text-xs text-slate-300 space-y-2">
-                            <div className="bg-slate-900 rounded p-2">
-                              <div className="text-slate-400 mb-1">Transform:</div>
-                              <div><span className="text-green-300">WSST</span> — Wavelet Synchrosqueezing</div>
-                              <div className="text-slate-500 mt-1">Handles variable RPM, transient faults</div>
-                            </div>
-                            <div className="bg-slate-900 rounded p-2">
-                              <div className="text-slate-400 mb-1">Why not FFT:</div>
-                              <div className="text-slate-500">FFT fails during acceleration/deceleration — spectral smearing</div>
-                            </div>
-                            <div className="bg-slate-900 rounded p-2">
-                              <div className="text-slate-400 mb-1">Output:</div>
-                              <div>Time-frequency map → CNN encoder → feature vector</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-3">
-                          <div className="text-purple-400 text-xs font-semibold mb-2">🎤 Audio Processing (Secondary)</div>
-                          <div className="text-xs text-slate-300 space-y-2">
-                            <div className="bg-slate-900 rounded p-2">
-                              <div className="text-slate-400 mb-1">Model:</div>
-                              <div><span className="text-purple-300">CLAP / BEATs</span> — Audio FM</div>
-                              <div className="text-slate-500 mt-1">Semantic understanding of sounds</div>
-                            </div>
-                            <div className="bg-slate-900 rounded p-2">
-                              <div className="text-slate-400 mb-1">Use when:</div>
-                              <div className="text-slate-500">Vibration ambiguous, distinctive acoustic signature</div>
-                            </div>
-                            <div className="bg-slate-900 rounded p-2">
-                              <div className="text-slate-400 mb-1">Output:</div>
-                              <div>Embedding → semantic labels + confidence</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
-                        <div className="text-blue-400 text-xs font-semibold mb-2">Mid-Level Fusion Architecture</div>
-                        <div className="text-xs text-slate-300">
-                          <pre className="bg-slate-900 rounded p-2 overflow-x-auto">
-{`Vibration → WSST → CNN encoder ──┐
-                                 ├─→ Fusion layer → Evidence set
-Audio → FM (CLAP) ──────────────┘
-                                 ↑
-OBD-II (RPM, temp) ───────────── context injection`}
-                          </pre>
-                          <div className="mt-2 text-slate-400">Cross-modal agreement boosts confidence; disagreement flags uncertainty</div>
-                        </div>
-                      </div>
-
-                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
-                        <div className="text-yellow-400 text-xs font-semibold mb-2">⚠ Open Questions</div>
-                        <div className="text-xs text-slate-300 space-y-2">
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>WSST vs WST: Which performs better for N55-specific fault signatures?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>When does audio actually add value over vibration alone?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>Fusion weighting: static or learned attention?</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-800 rounded-lg p-3 border border-green-500/30">
-                      <div className="text-green-400 font-semibold text-xs mb-2">📳 Vibration (WSST)</div>
-                      <div className="bg-slate-900 rounded p-2 text-xs">
-                        <div className="text-slate-300">Time-Frequency Analysis</div>
-                        <div className="mt-1 text-slate-500">
-                          Variable-speed robust<br/>
-                          <span className="text-green-300">→ crank_correlation: 0.94</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-slate-800 rounded-lg p-3 border border-purple-500/30">
-                      <div className="text-purple-400 font-semibold text-xs mb-2">🎤 Audio FM (Secondary)</div>
-                      <div className="bg-slate-900 rounded p-2 text-xs">
-                        <div className="text-slate-300">Semantic Embedding</div>
-                        <div className="mt-1 text-slate-500">
-                          Distinctive sounds only<br/>
-                          <span className="text-purple-300">→ metallic_knock: 0.72</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Stage>
-
-                <Arrow />
-
-                {/* Stage 3: Knowledge Graph Query */}
-                <Stage 
-                  number="3" 
-                  title="Knowledge Graph Query" 
-                  type="symbolic"
-                  details={
-                    <div className="space-y-4">
-                      <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                        <div className="text-green-400 text-xs font-semibold mb-2">Why Knowledge Graph (not flat KB)</div>
-                        <div className="text-xs text-slate-300 space-y-1">
-                          <div>• <span className="text-white">Traversable:</span> Root cause chains become graph queries</div>
-                          <div>• <span className="text-white">Queryable by LLM:</span> Stage 5 can "walk" the graph</div>
-                          <div>• <span className="text-white">Extensible:</span> Add edges without rewriting logic</div>
-                          <div>• <span className="text-white">RAG-compatible:</span> Enables retrieval for LLM grounding</div>
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-800 rounded-lg p-3">
-                        <div className="text-green-400 text-xs font-semibold mb-2">Graph Schema</div>
-                        <div className="text-xs text-slate-300">
-                          <pre className="bg-slate-900 rounded p-2 overflow-x-auto">
-{`(Component) ─[causes]→ (Symptom) ─[indicates]→ (Fault)
-     │                      │                      │
-     └─[part_of]→ (System)  └─[observed_via]→ (Sensor)
-                                                   │
-(Fault) ─[requires]→ (Evidence)                   │
-    │                    └────────────────────────┘
-    └─[repair_with]→ (Procedure)`}
-                          </pre>
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-800 rounded-lg p-3">
-                        <div className="text-green-400 text-xs font-semibold mb-2">Example: Root Cause Query</div>
-                        <div className="text-xs text-slate-400 mb-2">Given evidence: [metallic_knock, crank_correlation_high]</div>
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="bg-slate-900 rounded px-3 py-1 text-xs text-slate-300">
-                            MATCH (e:Evidence)-[:indicates]->(f:Fault)-[:caused_by*]->(root:Fault)
-                          </div>
-                          <div className="text-slate-500">↓</div>
-                          <div className="flex gap-2 flex-wrap justify-center">
-                            <div className="bg-green-900/50 border border-green-500/50 rounded px-2 py-1 text-xs text-green-300">rod_knock</div>
-                            <div className="bg-green-900/50 border border-green-500/50 rounded px-2 py-1 text-xs text-green-300">main_bearing</div>
-                            <div className="bg-green-900/50 border border-green-500/50 rounded px-2 py-1 text-xs text-green-300">oil_starvation</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
-                        <div className="text-blue-400 text-xs font-semibold mb-2">Future: GNN Enhancement</div>
-                        <div className="text-xs text-slate-300">
-                          <div className="mb-2">Current: Symbolic graph traversal (sufficient for early stage)</div>
-                          <div className="text-slate-400">When to add GNN:</div>
-                          <div className="text-slate-500">• 10k+ diagnosed cases available</div>
-                          <div className="text-slate-500">• Patterns emerge that KB doesn't capture</div>
-                          <div className="text-slate-500">• Fleet learning becomes viable</div>
-                        </div>
-                      </div>
-
-                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
-                        <div className="text-yellow-400 text-xs font-semibold mb-2">⚠ Open Questions</div>
-                        <div className="text-xs text-slate-300 space-y-2">
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>Graph storage: Neo4j vs RDF vs in-memory for edge deployment?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>How to populate KG: manual curation vs LLM extraction from manuals?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>Edge weights: confidence scores or binary relations?</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className="bg-slate-800 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-2">Knowledge Graph Traversal</div>
-                    <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
-                      <div className="bg-blue-900/50 border border-blue-500/50 rounded px-2 py-1 text-blue-300">evidence</div>
-                      <span className="text-slate-500">→</span>
-                      <div className="bg-yellow-900/50 border border-yellow-500/50 rounded px-2 py-1 text-yellow-300">symptom</div>
-                      <span className="text-slate-500">→</span>
-                      <div className="bg-green-900/50 border border-green-500/50 rounded px-2 py-1 text-green-300">root_cause</div>
-                    </div>
-                    <div className="text-center text-xs text-slate-500 mt-2">Graph query returns candidate hypotheses</div>
-                  </div>
-                </Stage>
-
-                <Arrow />
-
-                {/* Stage 4: Deductive Filtering */}
-                <Stage 
-                  number="4" 
-                  title="Deductive Filtering" 
-                  type="symbolic"
-                  details={
-                    <div className="space-y-4">
-                      <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                        <div className="text-green-400 text-xs font-semibold mb-2">Purpose</div>
-                        <div className="text-xs text-slate-300">
-                          Eliminate impossible hypotheses using hard rules that cannot be overridden by any other component (including LLM).
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-800 rounded-lg p-3">
-                        <div className="text-green-400 text-xs font-semibold mb-2">Types of Hard Constraints</div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="bg-slate-900 rounded p-2">
-                            <div className="text-white font-semibold">Platform Constraints</div>
-                            <div className="text-slate-500 mt-1">N55 has timing chain, not belt</div>
-                          </div>
-                          <div className="bg-slate-900 rounded p-2">
-                            <div className="text-white font-semibold">Physics Constraints</div>
-                            <div className="text-slate-500 mt-1">Rod knock must correlate with crank speed</div>
-                          </div>
-                          <div className="bg-slate-900 rounded p-2">
-                            <div className="text-white font-semibold">Logical Constraints</div>
-                            <div className="text-slate-500 mt-1">Can't be both lean and rich simultaneously</div>
-                          </div>
-                          <div className="bg-slate-900 rounded p-2">
-                            <div className="text-white font-semibold">Required Evidence</div>
-                            <div className="text-slate-500 mt-1">Vacuum leak requires lean condition</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
-                        <div className="text-yellow-400 text-xs font-semibold mb-2">⚠ Open Questions</div>
-                        <div className="text-xs text-slate-300 space-y-2">
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>How strict should physics constraints be? Allow tolerance or hard cutoff?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>What if vibration correlation is uncertain (noisy signal)?</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className="bg-slate-800 rounded-lg p-3">
-                    <div className="text-xs text-green-400 font-semibold mb-2">Hard Constraints (Cannot Override)</div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-red-900/30 border border-red-500/30 rounded p-2">
-                        <span className="text-red-400">✗ Lifter tick</span>
-                        <div className="text-slate-500">Requires cam_speed correlation</div>
-                      </div>
-                      <div className="bg-red-900/30 border border-red-500/30 rounded p-2">
-                        <span className="text-red-400">✗ Timing belt</span>
-                        <div className="text-slate-500">N55 uses chain</div>
-                      </div>
-                    </div>
-                  </div>
-                </Stage>
-
-                <Arrow />
-
-                {/* Stage 5: Abductive Ranking + RAG */}
-                <Stage 
-                  number="5" 
-                  title="Abductive Ranking (RAG-Grounded)" 
-                  type="hybrid"
-                  details={
-                    <div className="space-y-4">
-                      <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-3">
-                        <div className="text-purple-400 text-xs font-semibold mb-2">RAG: Retrieval-Augmented Generation</div>
-                        <div className="text-xs text-slate-300 space-y-2">
-                          <div className="bg-slate-900 rounded p-2">
-                            <div className="text-slate-400 mb-1">Why RAG is Essential:</div>
-                            <div>• Prevents hallucination on rare faults</div>
-                            <div>• Enables citation of evidence</div>
-                            <div>• Access to repair procedures</div>
-                          </div>
-                          <div className="bg-slate-900 rounded p-2">
-                            <div className="text-slate-400 mb-1">Retrieval Sources:</div>
-                            <div>• Knowledge Graph (fault relationships)</div>
-                            <div>• Repair manuals (OEM procedures)</div>
-                            <div>• Historical diagnoses (if available)</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-800 rounded-lg p-3">
-                        <div className="text-blue-400 text-xs font-semibold mb-2">LLM Prompting: Role-Rule-Format</div>
-                        <div className="text-xs text-slate-300">
-                          <pre className="bg-slate-900 rounded p-2 overflow-x-auto text-xs">
-{`ROLE: You are a vehicle diagnostic engine for BMW N55.
-
-RULES:
-- Only use evidence provided in context
-- Do not invent sensors or readings
-- If uncertain, output lower confidence
-- Always cite which evidence supports conclusion
-
-FORMAT: Output JSON with:
-- diagnosis, confidence, supporting_evidence, 
-  contradicting_evidence, reasoning`}
-                          </pre>
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-800 rounded-lg p-3">
-                        <div className="text-blue-400 text-xs font-semibold mb-2">Ranking Flow</div>
-                        <div className="space-y-2 text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500">1.</span>
-                            <div className="text-slate-300">Retrieve relevant KG subgraph + manual sections</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500">2.</span>
-                            <div className="text-slate-300">Inject into LLM context with evidence</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500">3.</span>
-                            <div className="text-slate-300">LLM reasons: "What explains ALL evidence?"</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500">4.</span>
-                            <div className="text-slate-300">Output ranked hypotheses with confidence</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
-                        <div className="text-red-400 text-xs font-semibold mb-2">Hallucination Mitigation</div>
-                        <div className="text-xs text-slate-300 space-y-1">
-                          <div>• <span className="text-white">Grounding:</span> RAG forces citation</div>
-                          <div>• <span className="text-white">Constraints:</span> Role-Rule-Format prompting</div>
-                          <div>• <span className="text-white">Verification:</span> Symbolic check against Stage 4 rules</div>
-                          <div>• <span className="text-white">Fallback:</span> If LLM uncertain, defer to symbolic ranking</div>
-                        </div>
-                      </div>
-
-                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
-                        <div className="text-yellow-400 text-xs font-semibold mb-2">⚠ Open Questions</div>
-                        <div className="text-xs text-slate-300 space-y-2">
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>LLM choice: cloud API vs on-device SLM (Qwen2.5-7B)?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>How to detect and handle hallucinations at runtime?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>Confidence calibration: how to align LLM confidence with real accuracy?</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className="bg-slate-800 rounded-lg p-3">
-                    <div className="text-xs text-blue-400 font-semibold mb-2">🤖 LLM + RAG: "What explains ALL evidence?"</div>
-                    <div className="space-y-1">
-                      {[
-                        { fault: 'Rod knock', coverage: '5/5', contra: '1', score: '0.72', top: true },
-                        { fault: 'Main bearing', coverage: '4/5', contra: '1', score: '0.58', top: false },
-                        { fault: 'Wrist pin', coverage: '3/5', contra: '2', score: '0.34', top: false },
-                      ].map((h, i) => (
-                        <div key={i} className={`flex items-center justify-between text-xs p-2 rounded ${h.top ? 'bg-blue-900/30 border border-blue-500/30' : 'bg-slate-900'}`}>
-                          <span className={h.top ? 'text-white font-semibold' : 'text-slate-400'}>{h.fault}</span>
-                          <div className="flex gap-3 text-slate-500">
-                            <span>Cov: {h.coverage}</span>
-                            <span>Contra: {h.contra}</span>
-                            <span className={h.top ? 'text-green-400' : ''}>{h.score}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-                      <span className="text-purple-400">📚</span> Grounded in KG + repair manual context
-                    </div>
-                  </div>
-                </Stage>
-
-                <Arrow />
-
-                {/* Stage 6: Hierarchical Fallback */}
-                <Stage 
-                  number="6" 
-                  title="Hierarchical Fallback" 
-                  type="symbolic"
-                  details={
-                    <div className="space-y-4">
-                      <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                        <div className="text-green-400 text-xs font-semibold mb-2">Purpose</div>
-                        <div className="text-xs text-slate-300">
-                          Ensure the system <span className="text-white">always provides actionable output</span>, even when confidence is low. Never output raw "unknown".
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-800 rounded-lg p-3">
-                        <div className="text-green-400 text-xs font-semibold mb-2">Fallback Hierarchy</div>
-                        <div className="space-y-2 text-xs">
-                          <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
-                            <span className="text-green-400 font-semibold">Level 1:</span>
-                            <span className="text-slate-300 ml-2">Specific Fault</span>
-                            <span className="text-slate-500 ml-2">— "rod_knock"</span>
-                          </div>
-                          <div className="bg-yellow-900/30 border border-yellow-500/30 rounded p-2">
-                            <span className="text-yellow-400 font-semibold">Level 2:</span>
-                            <span className="text-slate-300 ml-2">Category</span>
-                            <span className="text-slate-500 ml-2">— "bottom_end_noise"</span>
-                          </div>
-                          <div className="bg-orange-900/30 border border-orange-500/30 rounded p-2">
-                            <span className="text-orange-400 font-semibold">Level 3:</span>
-                            <span className="text-slate-300 ml-2">System</span>
-                            <span className="text-slate-500 ml-2">— "engine_internal"</span>
-                          </div>
-                          <div className="bg-red-900/30 border border-red-500/30 rounded p-2">
-                            <span className="text-red-400 font-semibold">Level 4:</span>
-                            <span className="text-slate-300 ml-2">Safe Fallback</span>
-                            <span className="text-slate-500 ml-2">— "professional inspection"</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className="bg-slate-800 rounded-lg p-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="bg-green-900/50 border border-green-500/50 rounded px-2 py-1">
-                          rod_knock (0.72)
-                        </div>
-                      </div>
-                      <div className="text-slate-500">
-                        Fallbacks: bottom_end → engine_internal → mechanic
-                      </div>
-                    </div>
-                  </div>
-                </Stage>
-
-                <Arrow />
-
-                {/* Stage 7: Output */}
-                <Stage number="7" title="Diagnosis Output" type="hybrid"
-                  details={
-                    <div className="space-y-3">
-                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
-                        <div className="text-yellow-400 text-xs font-semibold mb-2">⚠ Open Questions</div>
-                        <div className="text-xs text-slate-300 space-y-2">
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>What information is most actionable for end users vs mechanics?</div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="text-yellow-500">•</span>
-                            <div>How to present contradicting evidence without confusing users?</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-lg p-4 border border-blue-500">
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="text-white font-bold">🔧 Rod Bearing Wear</div>
-                      <div className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">72%</div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <div className="text-green-400 font-semibold mb-1">Supporting</div>
-                        <div className="space-y-1 text-slate-300">
-                          <div>✓ Vibration: crank correlation 0.94</div>
-                          <div>✓ Audio: metallic_knock pattern</div>
-                          <div>✓ Worse when warm</div>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-yellow-400 font-semibold mb-1">Contradicting</div>
-                        <div className="space-y-1 text-slate-300">
-                          <div>⚠ Oil pressure NORMAL</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 bg-yellow-900/30 border border-yellow-500/50 rounded p-2 text-xs">
-                      <span className="text-yellow-400 font-semibold">Implication: </span>
-                      <span className="text-yellow-200">Early-stage wear OR sensor fault</span>
-                    </div>
-                  </div>
-                </Stage>
-              </>
-            )}
-
-            {activeTab === 'output' && (
-              <>
-                {/* JSON Schema */}
-                <Stage number="API" title="Output Schema">
-                  <pre className="text-xs text-slate-300 bg-slate-800 rounded p-3 overflow-x-auto">
-{`{
-  "diagnosis": {
-    "fault": "rod_knock",
-    "level": "specific",
-    "confidence": 0.72,
-    "severity": "critical"
-  },
-  "evidence": {
-    "supporting": [
-      {"source": "vibration", "claim": "crank_correlation: 0.94"},
-      {"source": "audio_fm", "claim": "metallic_knock: 0.72"}
-    ],
-    "contradicting": [
-      {"source": "obd", "claim": "oil_pressure: normal"}
-    ]
-  },
-  "reasoning": "High crank correlation from vibration analysis...",
-  "action": {
-    "urgency": "critical",
-    "immediate": "Stop driving, check oil level",
-    "verification": "Manual oil pressure test"
-  }
-}`}
-                  </pre>
-                </Stage>
-
-                <Arrow />
-
-                {/* User-Facing Display */}
-                <Stage number="UI" title="User Display">
-                  <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 border-2 border-blue-500">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <div className="text-red-400 text-xs font-semibold uppercase">⚠️ Critical</div>
-                        <div className="text-white text-xl font-bold mt-1">Rod Bearing Wear</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-slate-400 text-xs">Confidence</div>
-                        <div className="text-3xl font-bold text-blue-400">72%</div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                        <div className="text-green-400 text-xs font-semibold mb-2">✓ Supporting</div>
-                        <ul className="text-xs text-slate-300 space-y-1">
-                          <li>• Vibration tracks crankshaft</li>
-                          <li>• Audio matches knock pattern</li>
-                          <li>• Worse when warm</li>
-                        </ul>
-                      </div>
-                      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
-                        <div className="text-yellow-400 text-xs font-semibold mb-2">⚠ Contradicting</div>
-                        <ul className="text-xs text-slate-300 space-y-1">
-                          <li>• Oil pressure normal</li>
-                        </ul>
-                        <div className="text-xs text-slate-500 mt-1">Expected: low</div>
-                      </div>
-                    </div>
-
-                    <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-3">
-                      <div className="text-red-400 text-xs font-semibold">⛔ Immediate Action</div>
-                      <div className="text-sm text-white font-semibold">Stop driving. Check oil level.</div>
-                    </div>
-
-                    <div className="bg-slate-800/50 rounded-lg p-3">
-                      <div className="text-slate-400 text-xs font-semibold">Verification</div>
-                      <div className="text-sm text-slate-300">Oil pressure test at idle when warm</div>
-                      <div className="text-xs text-slate-500">&lt;15 PSI confirms bearing failure</div>
-                    </div>
-                  </div>
-                </Stage>
-              </>
-            )}
-
-            {/* Footer */}
-            <div className="mt-6 pt-4 border-t border-slate-800">
-              <div className="grid grid-cols-7 gap-2">
-                {[
-                  { icon: '📳', name: 'Vibration', type: 'WSST' },
-                  { icon: '🎤', name: 'Audio FM', type: 'CLAP' },
-                  { icon: '🔗', name: 'KG', type: 'Graph' },
-                  { icon: '📚', name: 'RAG', type: 'Retrieval' },
-                  { icon: '🤖', name: 'LLM', type: 'Reasoning' },
-                  { icon: '✓', name: 'Rules', type: 'Deductive' },
-                  { icon: '📊', name: 'UQ', type: 'Confidence' },
-                ].map((t, i) => (
-                  <div key={i} className="bg-slate-800/50 rounded-lg p-2 text-center">
-                    <div className="text-lg">{t.icon}</div>
-                    <div className="text-xs text-white font-medium">{t.name}</div>
-                    <div className="text-xs text-slate-500">{t.type}</div>
-                  </div>
-                ))}
-              </div>
+          {/* Validation Summary */}
+          <div className="max-w-2xl mx-auto mb-4 flex justify-center gap-4 text-xs">
+            <div className="flex items-center gap-1">
+              <span className="text-green-400">●</span>
+              <span className="text-slate-400">3/8 validated</span>
             </div>
-
-            {/* Version Notes */}
-            <div className="mt-4 text-xs text-slate-600 text-center">
-              v3.2: Vibration primary, Knowledge Graph, RAG-grounded LLM | GNN deferred to scale phase
+            <div className="flex items-center gap-1">
+              <span className="text-slate-400">●</span>
+              <span className="text-slate-400">5/8 pending</span>
             </div>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            {view === 'executive' && <ExecutiveView />}
+            {view === 'engineering' && <EngineeringView />}
+            {view === 'research' && <ResearchLog />}
+          </div>
+
+          {/* Compact Legend */}
+          <div className="max-w-2xl mx-auto mt-4 pt-3 border-t border-slate-800 flex justify-center gap-4 text-xs text-slate-500">
+            <span><span className="text-purple-400">■</span> Neural</span>
+            <span><span className="text-green-400">■</span> Symbolic</span>
+            <span><span className="text-blue-400">■</span> Hybrid</span>
+          </div>
+
+          <div className="text-center text-xs text-slate-600 mt-3">
+            v3.3 — MAFAULDA validated (98.7%), OBD sim validated vs EngineFaultDB (Δ5%), Audio demoted
           </div>
         </div>
       );
