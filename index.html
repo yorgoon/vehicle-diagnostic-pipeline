@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vehicle Diagnostic Pipeline v5.0</title>
+  <title>Vehicle Diagnostic Pipeline v5.1</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -73,7 +73,7 @@
       const stages = [
         { n: '0', title: 'Preprocessing', desc: 'Windowing (3-5s) + Resample + OBD Alignment + Metadata', validation: 'validated', note: 'v2.1 spec' },
         { n: '1', title: 'Inputs', desc: 'Sound*/Vibration* + OBD + User NLU (*configurable anchor)', validation: 'validated', note: 'v5.0 Multimodal', llm: true },
-        { n: '2', title: 'Evidence Extraction', desc: 'SoundEncoder (AST/CLAP) + 18-dim Vib + OBD Rules', validation: 'partial', note: 'Sound: 35.7% acc ⚠️' },
+        { n: '2', title: 'Evidence Extraction', desc: 'SoundEncoder (AST/CLAP) + 9-class Symptoms + 18-dim Vib + OBD Rules', validation: 'partial', note: '9-class taxonomy' },
         { n: '2.5', title: 'Fusion', desc: 'Late (default) or Cross-Attention (experimental)', validation: 'validated', note: 'Configurable' },
         { n: '2b', title: 'Physics Simulation', desc: 'Chain Mesh + VANOS Burst + Valvetrain Tick', validation: 'validated', note: 'Improved subtle faults' },
         { n: '3', title: 'Knowledge Graph Query', desc: 'Fault KB → candidate hypotheses', validation: 'validated', note: 'Unit tests passed' },
@@ -231,7 +231,7 @@
                 <div className="bg-cyan-900/30 border border-cyan-500/50 rounded p-2 text-center">
                   <div className="text-cyan-400 font-semibold">Sound</div>
                   <div className="text-slate-400">→ SoundEncoder</div>
-                  <div className="text-slate-400">→ 6-class Symptoms</div>
+                  <div className="text-slate-400">→ 9-class Symptoms</div>
                 </div>
                 <div className="bg-green-900/30 border border-green-500/50 rounded p-2 text-center">
                   <div className="text-green-400 font-semibold">Vibration</div>
@@ -267,9 +267,11 @@
                   <div className="text-slate-500 mt-2"># 2. Sound Anomaly Head (Autoencoder)</div>
                   <div>z_sound → <span className="text-yellow-300">SoundAnomalyHead</span> → anomaly_score</div>
                   <div className="text-slate-400 ml-4">Trained on healthy sounds only</div>
-                  <div className="text-slate-500 mt-2"># 3. Sound Symptom Head (6-class)</div>
+                  <div className="text-slate-500 mt-2"># 3. Sound Symptom Head (9-class hierarchy)</div>
                   <div>z_sound → <span className="text-green-300">SoundSymptomHead</span> → symptom_probs</div>
-                  <div className="text-slate-400 ml-4">knock, tick, rattle, whine, hiss, squeal</div>
+                  <div className="text-slate-400 ml-4">Impulsive: knock, tick, clunk</div>
+                  <div className="text-slate-400 ml-4">Tonal: whine, squeal, rumble</div>
+                  <div className="text-slate-400 ml-4">Noise: rattle, hiss, grind</div>
                 </div>
               </div>
               <div className="bg-green-900/20 border border-green-500/30 rounded p-2">
@@ -433,29 +435,103 @@
           ),
           details: (
             <div className="text-xs text-slate-300 space-y-2">
-              <div className="bg-cyan-900/20 border border-cyan-500/30 rounded p-2">
-                <div className="text-cyan-400 font-semibold mb-2">How KG Query Works</div>
+              {/* Graph Structure */}
+              <div className="bg-purple-900/20 border border-purple-500/30 rounded p-2">
+                <div className="text-purple-400 font-semibold mb-2">Knowledge Graph Structure (Bipartite)</div>
                 <div className="bg-slate-900 rounded p-2 font-mono text-xs">
-                  <div className="text-slate-500"># Input: Symptoms from Stage 2</div>
-                  <div className="text-yellow-300">{`evidence.vibration.symptoms = {`}</div>
-                  <div className="text-yellow-300 ml-4">{`"vib_high_kurtosis": 0.92,`}</div>
-                  <div className="text-yellow-300 ml-4">{`"vib_2x_order_dominant": 0.82`}</div>
-                  <div className="text-yellow-300">{`}`}</div>
-                  <div className="text-slate-500 mt-2"># KG Lookup: Which faults have these symptoms?</div>
-                  <div className="text-green-300">KG["vib_high_kurtosis"] → Rod Bearing (0.85), Main Bearing (0.80)</div>
-                  <div className="text-green-300">KG["vib_2x_order_dominant"] → Rod Bearing (0.90), Piston Slap (0.60)</div>
-                  <div className="text-slate-500 mt-2"># Output: Aggregated candidates</div>
-                  <div className="text-cyan-300">{`candidates = [ Rod Bearing: 0.87, Main Bearing: 0.40, ... ]`}</div>
+                  <div className="text-slate-500"># Fault → CAUSES → Symptom (edges store P(symptom|fault))</div>
+                  <div className="mt-1">
+                    <span className="text-red-400">rod_bearing</span>
+                    <span className="text-slate-500"> ──0.90──→ </span>
+                    <span className="text-cyan-300">sound_knock</span>
+                  </div>
+                  <div>
+                    <span className="text-red-400">rod_bearing</span>
+                    <span className="text-slate-500"> ──0.85──→ </span>
+                    <span className="text-green-300">vib_high_kurtosis</span>
+                  </div>
+                  <div>
+                    <span className="text-red-400">rod_bearing</span>
+                    <span className="text-slate-500"> ──0.90──→ </span>
+                    <span className="text-green-300">vib_2x_order</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-orange-400">vacuum_leak</span>
+                    <span className="text-slate-500"> ──0.90──→ </span>
+                    <span className="text-cyan-300">sound_hiss</span>
+                  </div>
+                  <div>
+                    <span className="text-orange-400">vacuum_leak</span>
+                    <span className="text-slate-500"> ──0.95──→ </span>
+                    <span className="text-blue-300">dtc_p0171</span>
+                  </div>
                 </div>
               </div>
+
+              {/* Query Algorithm */}
+              <div className="bg-cyan-900/20 border border-cyan-500/30 rounded p-2">
+                <div className="text-cyan-400 font-semibold mb-2">Query Algorithm (4 Steps)</div>
+                <div className="space-y-2">
+                  <div className="bg-slate-900 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">Step 1: Collect Symptoms</div>
+                    <div className="font-mono text-xs mt-1">
+                      <div className="text-slate-400">all_symptoms = {'{'}</div>
+                      <div className="text-cyan-300 ml-2">"sound_knock": 0.85,  <span className="text-slate-500"># from 9-class classifier</span></div>
+                      <div className="text-green-300 ml-2">"vib_high_kurtosis": 0.92, "vib_2x_order": 0.78,  <span className="text-slate-500"># from rules</span></div>
+                      <div className="text-purple-300 ml-2">"condition_under_load": 0.9  <span className="text-slate-500"># from user NLU</span></div>
+                      <div className="text-slate-400">{'}'}</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">Step 2: Reverse Lookup (Symptom → Faults)</div>
+                    <div className="font-mono text-xs mt-1">
+                      <div className="text-slate-500"># For each symptom, find faults that cause it</div>
+                      <div className="text-cyan-300">"sound_knock" → rod_bearing (0.90), main_bearing (0.75)</div>
+                      <div className="text-green-300">"vib_2x_order" → rod_bearing (0.90), piston_slap (0.60)</div>
+                      <div className="text-slate-500 mt-1"># score += match_strength × P(symptom|fault) × diagnostic_weight</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">Step 3: Missing Evidence Penalty</div>
+                    <div className="font-mono text-xs mt-1">
+                      <div className="text-slate-500"># rod_bearing expects: [knock ✓, kurtosis ✓, 2x_order ✓] → no penalty</div>
+                      <div className="text-slate-500"># main_bearing expects: [knock ✓, 1x_order ✗] → penalty -0.05</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">Step 4: Apply Prior + Normalize</div>
+                    <div className="font-mono text-xs mt-1">
+                      <div className="text-slate-500"># final_score = 0.8 × evidence_score + 0.2 × prior_probability</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Output */}
+              <div className="bg-green-900/20 border border-green-500/30 rounded p-2">
+                <div className="text-green-400 font-semibold mb-2">Output: CandidateFault List</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-400">[</div>
+                  <div className="ml-2">{'{'} fault: <span className="text-red-400">"rod_bearing"</span>, score: <span className="text-green-300">0.87</span>,</div>
+                  <div className="ml-4">evidence_support: {'{'}"sound_knock": 0.92, "vib_2x_order": 0.91{'}'},</div>
+                  <div className="ml-4">missing_evidence: [] {'}'},</div>
+                  <div className="ml-2">{'{'} fault: <span className="text-orange-400">"main_bearing"</span>, score: <span className="text-yellow-300">0.42</span>,</div>
+                  <div className="ml-4">missing_evidence: ["vib_1x_order"] {'}'},</div>
+                  <div className="text-slate-400">]</div>
+                </div>
+              </div>
+
+              {/* Ontology Stats */}
               <div className="bg-slate-900 rounded p-2">
                 <div className="text-slate-400 mb-1">Ontology Structure:</div>
-                <div>• <span className="text-green-400">13 Faults:</span> Rod Bearing, Main Bearing, VANOS, Timing Chain, Vacuum Leak, etc.</div>
-                <div>• <span className="text-blue-400">59 Symptoms:</span> Sound types, vibration patterns, OBD readings, DTCs</div>
-                <div>• <span className="text-purple-400">98 Edges:</span> Weighted P(Symptom|Fault) relationships</div>
+                <div>• <span className="text-red-400">13 Faults:</span> Rod Bearing, Main Bearing, VANOS, Timing Chain, Vacuum Leak, etc.</div>
+                <div>• <span className="text-cyan-400">59 Symptoms:</span> Sound (9), Vibration (15), OBD (20), DTCs (15)</div>
+                <div>• <span className="text-purple-400">98 Edges:</span> P(Symptom|Fault) from BMW TIS + literature</div>
               </div>
+
+              {/* Key Insight */}
               <div className="bg-yellow-900/20 border border-yellow-500/30 rounded p-2">
-                <span className="text-yellow-400 font-semibold">Key Insight:</span> Stage 2 outputs <span className="text-cyan-300">symptom IDs</span> (not fault predictions). KG uses symptoms to find matching faults via edge weights.
+                <span className="text-yellow-400 font-semibold">Key Insight:</span> This is <span className="text-cyan-300">abductive inference</span> - finding the best explanation (fault) for observed symptoms. Stage 2 outputs symptom IDs; KG does the reasoning.
               </div>
             </div>
           )
@@ -667,8 +743,8 @@
               <div className="ml-4">→ z_sound <span className="text-yellow-300">(512-dim projection)</span></div>
               <div className="text-slate-500 mt-2"># 3. Sound Heads</div>
               <div>z_sound → <span className="text-purple-300">SoundAnomalyHead</span> → anomaly_score</div>
-              <div>z_sound → <span className="text-green-300">SoundSymptomHead</span> → symptom_probs[6]</div>
-              <div className="ml-4 text-slate-500">Classes: knock, tick, rattle, whine, hiss, squeal</div>
+              <div>z_sound → <span className="text-green-300">SoundSymptomHead</span> → symptom_probs[9]</div>
+              <div className="ml-4 text-slate-500">Impulsive: knock, tick, clunk | Tonal: whine, squeal, rumble | Noise: rattle, hiss, grind</div>
             </div>
           </div>
 
@@ -821,7 +897,7 @@
           <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-lg p-3 border border-purple-500/50 mt-4">
             <div className="text-purple-300 font-bold">Key Insight (v5.0 Multimodal)</div>
             <div className="text-slate-300 mt-1">
-              <strong>Sound path:</strong> <span className="text-cyan-300">Audio</span> → <span className="text-purple-300">SoundEncoder(FM)</span> → <span className="text-yellow-300">z_sound</span> → <span className="text-green-300">6-class Symptoms</span> → <span className="text-blue-300">KG</span>
+              <strong>Sound path:</strong> <span className="text-cyan-300">Audio</span> → <span className="text-purple-300">SoundEncoder(FM)</span> → <span className="text-yellow-300">z_sound</span> → <span className="text-green-300">9-class Symptoms</span> → <span className="text-blue-300">KG</span>
             </div>
             <div className="text-slate-300 mt-1">
               <strong>Vibration path:</strong> <span className="text-cyan-300">Signal</span> → <span className="text-green-300">18-dim Features</span> → <span className="text-yellow-300">Anomaly Score</span> → <span className="text-green-300">Symptoms</span> → <span className="text-blue-300">KG</span>
@@ -936,38 +1012,75 @@
 
           {/* Sound Symptom Vocabulary */}
           <div className="bg-yellow-900/20 rounded-lg p-4 border border-yellow-500/50">
-            <div className="text-yellow-400 font-bold mb-3">Sound Symptom Vocabulary (6-class, KG-aligned)</div>
-            <div className="grid grid-cols-6 gap-2">
-              {[
-                { id: 'knock', desc: 'Impact sounds', faults: 'Rod/Main bearing, detonation' },
-                { id: 'tick', desc: 'Rapid clicking', faults: 'Lifter, injector, HPFP' },
-                { id: 'rattle', desc: 'Loose vibration', faults: 'Timing chain, VANOS' },
-                { id: 'whine', desc: 'Tonal continuous', faults: 'Turbo, alternator, PS pump' },
-                { id: 'hiss', desc: 'Air escape', faults: 'Vacuum/boost leak' },
-                { id: 'squeal', desc: 'High-pitch friction', faults: 'Belt, brake' },
-              ].map((s, i) => (
-                <div key={i} className="bg-slate-900 rounded p-2 text-center">
-                  <div className="text-yellow-300 font-mono text-xs">sound_{s.id}</div>
-                  <div className="text-slate-400 text-xs mt-1">{s.desc}</div>
+            <div className="text-yellow-400 font-bold mb-3">Sound Symptom Vocabulary (9-class, Physics-Informed Hierarchy)</div>
+            <div className="space-y-3">
+              {/* Impulsive Category */}
+              <div className="bg-red-900/20 border border-red-500/30 rounded p-2">
+                <div className="text-red-400 font-semibold text-xs mb-2">Impulsive (High crest factor, transient events)</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'knock', desc: 'Heavy impacts', faults: 'Rod/main bearing' },
+                    { id: 'tick', desc: 'Rapid clicking', faults: 'Lifter, injector, HPFP' },
+                    { id: 'clunk', desc: 'Single thuds', faults: 'Suspension, mounts' },
+                  ].map((s, i) => (
+                    <div key={i} className="bg-slate-900 rounded p-2 text-center">
+                      <div className="text-red-300 font-mono text-xs">sound_{s.id}</div>
+                      <div className="text-slate-400 text-xs mt-1">{s.desc}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              {/* Tonal Category */}
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded p-2">
+                <div className="text-blue-400 font-semibold text-xs mb-2">Tonal (Dominant frequencies, periodic)</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'whine', desc: 'Gear/bearing tone', faults: 'Turbo, alternator, PS' },
+                    { id: 'squeal', desc: 'High-pitch friction', faults: 'Belt, brake' },
+                    { id: 'rumble', desc: 'Low-freq drone', faults: 'Wheel bearing, exhaust' },
+                  ].map((s, i) => (
+                    <div key={i} className="bg-slate-900 rounded p-2 text-center">
+                      <div className="text-blue-300 font-mono text-xs">sound_{s.id}</div>
+                      <div className="text-slate-400 text-xs mt-1">{s.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Noise Category */}
+              <div className="bg-green-900/20 border border-green-500/30 rounded p-2">
+                <div className="text-green-400 font-semibold text-xs mb-2">Noise/Broadband (Wide spectrum, stochastic)</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'rattle', desc: 'Loose parts', faults: 'Timing chain, VANOS' },
+                    { id: 'hiss', desc: 'Air/fluid escape', faults: 'Vacuum/boost leak' },
+                    { id: 'grind', desc: 'Metal-on-metal', faults: 'Brake, synchro' },
+                  ].map((s, i) => (
+                    <div key={i} className="bg-slate-900 rounded p-2 text-center">
+                      <div className="text-green-300 font-mono text-xs">sound_{s.id}</div>
+                      <div className="text-slate-400 text-xs mt-1">{s.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Healthy Sound Handling */}
           <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/50">
-            <div className="text-green-400 font-bold mb-3">Healthy Sound Handling (No Explicit Healthy Class)</div>
+            <div className="text-green-400 font-bold mb-3">Healthy Sound Handling (Hierarchical Classification)</div>
             <div className="bg-slate-900 rounded p-3 font-mono text-xs text-slate-400">
-              <div className="text-slate-500"># Combined anomaly + symptom logic</div>
+              <div className="text-slate-500"># Combined anomaly + symptom logic with hierarchy</div>
               <div className="mt-1">if <span className="text-cyan-300">anomaly_score</span> &lt; 0.3 AND <span className="text-yellow-300">max(symptom_probs)</span> &lt; 0.3:</div>
               <div className="ml-4 text-green-300">classification = "healthy"</div>
               <div className="mt-1">elif <span className="text-cyan-300">anomaly_score</span> &gt; 0.7 AND <span className="text-yellow-300">max(symptom_probs)</span> &lt; 0.3:</div>
-              <div className="ml-4 text-orange-300">classification = "unknown_anomaly"  <span className="text-slate-500"># Abnormal but unrecognized</span></div>
+              <div className="ml-4 text-orange-300">classification = "unknown_anomaly"</div>
+              <div className="mt-1">elif <span className="text-yellow-300">max(symptom_probs)</span> &gt; 0.4:</div>
+              <div className="ml-4 text-blue-300">classification = argmax(symptom_probs)  <span className="text-slate-500"># 9-class</span></div>
               <div className="mt-1">else:</div>
-              <div className="ml-4 text-blue-300">classification = argmax(symptom_probs)</div>
+              <div className="ml-4 text-purple-300">classification = argmax([impulsive, tonal, noise])  <span className="text-slate-500"># 3-category fallback</span></div>
             </div>
             <div className="mt-3 text-slate-400 text-xs">
-              <strong>Key insight:</strong> Symptom head outputs 6 fault classes only. Healthy determined via low anomaly + low symptom scores.
+              <strong>Key insight:</strong> Symptom head outputs 9 classes with 3-category hierarchy. Uncertain fine-grained → coarse fallback.
             </div>
           </div>
 
@@ -1004,7 +1117,7 @@
                 <span className="bg-green-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">1</span>
                 <div className="flex-1 bg-slate-900 rounded p-2">
                   <span className="text-green-300 font-semibold">Unimodal Pretraining</span>
-                  <span className="text-slate-400 ml-2">Sound anomaly (AE) + symptom head (6-class MLP)</span>
+                  <span className="text-slate-400 ml-2">Sound anomaly (AE) + symptom head (9-class + 3-category)</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -1029,21 +1142,21 @@
             <div className="text-orange-400 font-bold mb-3">FM Evaluation Framework (Pre-Implementation)</div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-900 rounded p-3">
-                <div className="text-blue-400 font-semibold mb-2">E1: Coarse Classification (6-class)</div>
+                <div className="text-blue-400 font-semibold mb-2">E1: Hierarchical Classification (9-class + 3-category)</div>
                 <div className="text-slate-400 text-xs">
                   <div>• Extract embeddings for all YouTube samples</div>
-                  <div>• Map 21 labels → 6 coarse symptoms</div>
+                  <div>• Map to 9-class with 3-category hierarchy</div>
                   <div>• Train linear classifier (80/20 split)</div>
-                  <div className="text-green-300 mt-1">Report: accuracy, macro-F1, confusion</div>
+                  <div className="text-green-300 mt-1">Report: 9-class acc, 3-category acc, confusion</div>
                 </div>
               </div>
               <div className="bg-slate-900 rounded p-3">
                 <div className="text-pink-400 font-semibold mb-2">E2: Zero-Shot (CLAP only)</div>
                 <div className="text-slate-400 text-xs">
-                  <div>• Define prompts for 6 symptom classes</div>
+                  <div>• Define prompts for 9 symptom classes</div>
                   <div>• Compute cosine similarity with embeddings</div>
                   <div>• Predict by highest average similarity</div>
-                  <div className="text-green-300 mt-1">Report: accuracy vs trained classifier</div>
+                  <div className="text-green-300 mt-1">Report: 9-class and 3-category accuracy</div>
                 </div>
               </div>
               <div className="bg-slate-900 rounded p-3">
@@ -1058,10 +1171,10 @@
               <div className="bg-slate-900 rounded p-3">
                 <div className="text-cyan-400 font-semibold mb-2">E4: Embedding Quality</div>
                 <div className="text-slate-400 text-xs">
-                  <div>• Silhouette score (6-class grouping)</div>
+                  <div>• Silhouette score (9-class + 3-category)</div>
                   <div>• Calinski-Harabasz, Davies-Bouldin</div>
                   <div>• t-SNE / UMAP visualization</div>
-                  <div className="text-green-300 mt-1">Report: cluster separation quality</div>
+                  <div className="text-green-300 mt-1">Report: within vs between category distance</div>
                 </div>
               </div>
             </div>
@@ -1072,13 +1185,19 @@
                 <div className="text-red-400">Minimum</div>
                 <div className="text-yellow-400">Good</div>
                 <div className="text-green-400">Excellent</div>
-                <div className="text-cyan-400">CLAP Result</div>
+                <div className="text-cyan-400">Target</div>
                 <div></div>
-                <div className="text-slate-400">6-class acc</div>
-                <div className="text-slate-400">50%</div>
+                <div className="text-slate-400">9-class acc</div>
+                <div className="text-slate-400">45%</div>
+                <div className="text-slate-400">60%</div>
+                <div className="text-slate-400">75%</div>
+                <div className="text-yellow-400">TBD</div>
+                <div></div>
+                <div className="text-slate-400">3-category acc</div>
                 <div className="text-slate-400">65%</div>
                 <div className="text-slate-400">80%</div>
-                <div className="text-red-400 font-bold">35.7% ⚠️</div>
+                <div className="text-slate-400">90%</div>
+                <div className="text-yellow-400">TBD</div>
                 <div></div>
                 <div className="text-slate-400">Anomaly AUC</div>
                 <div className="text-slate-400">0.70</div>
@@ -1088,9 +1207,9 @@
                 <div></div>
               </div>
             </div>
-            <div className="mt-2 bg-red-900/20 border border-red-500/30 rounded p-2">
-              <div className="text-red-400 font-semibold text-xs">⚠️ E1 Results (2026-01-24)</div>
-              <div className="text-slate-400 text-xs mt-1">CLAP 5-fold CV: 35.7% accuracy, 30.2% macro-F1. Best: whine (48%), knock (44%). Worst: hiss (11%), squeal (17%). Root cause: class imbalance + domain gap.</div>
+            <div className="mt-2 bg-yellow-900/20 border border-yellow-500/30 rounded p-2">
+              <div className="text-yellow-400 font-semibold text-xs">📋 Taxonomy Revision (2026-01-24)</div>
+              <div className="text-slate-400 text-xs mt-1">Old 6-class: 35.7% acc (baseline). New 9-class hierarchy: Impulsive/Tonal/Noise grouping. Expected: 3-category &gt;70%, 9-class ~50-60%.</div>
             </div>
           </div>
 
@@ -1141,9 +1260,9 @@
             <div className="space-y-1 text-slate-400">
               <div>1. <span className="text-green-400">Done:</span> SoundEncoder interface with CLAP + AST backends</div>
               <div>2. <span className="text-green-400">Done:</span> SoundEvidence schema in evidence_schema.py</div>
-              <div>3. <span className="text-green-400">Done:</span> SoundAnomalyHead + SoundSymptomHead (6-class)</div>
-              <div>4. <span className="text-green-400">Done:</span> E1 FM Evaluation - CLAP 6-class classification</div>
-              <div>5. <span className="text-red-400">⚠️ Results:</span> CLAP accuracy 35.7% (below 50% minimum)</div>
+              <div>3. <span className="text-green-400">Done:</span> SoundAnomalyHead + SoundSymptomHead (9-class)</div>
+              <div>4. <span className="text-green-400">Done:</span> E1 FM Evaluation - CLAP baseline (old 6-class)</div>
+              <div>5. <span className="text-yellow-400">🔄 In Progress:</span> 9-class taxonomy with hierarchical fallback</div>
               <div>6. <span className="text-slate-500">Planned:</span> Additional FM backends (AudioMAE, BEATs)</div>
               <div>7. <span className="text-slate-500">Planned:</span> Cross-attention fusion module</div>
             </div>
@@ -1192,14 +1311,15 @@
         // v5.0 / Multimodal v2 decisions
         { stage: '1', q: 'Sound as first-class anchor?', status: 'resolved', answer: 'Yes. Sound promoted from demoted to configurable anchor (equal to vibration).' },
         { stage: '2', q: 'Sound encoder swappable?', status: 'resolved', answer: 'Yes. Interface defined: AST, CLAP, AudioMAE, BEATs all supported via SoundEncoderInterface.' },
-        { stage: '2', q: 'Sound symptom vocabulary size?', status: 'resolved', answer: '6-class coarse: knock, tick, rattle, whine, hiss, squeal. KG maps to fine-grained faults.' },
+        { stage: '2', q: 'Sound symptom vocabulary size?', status: 'resolved', answer: '9-class hierarchy: Impulsive (knock, tick, clunk), Tonal (whine, squeal, rumble), Noise (rattle, hiss, grind).' },
         { stage: '2.5', q: 'Fusion strategy?', status: 'resolved', answer: 'Configurable: Late fusion (default, implemented) or Cross-attention (experimental, planned).' },
         { stage: '2.5', q: 'Missing modality handling?', status: 'resolved', answer: 'NULL embeddings + zero attention mask. Modality dropout (30%) during training.' },
         { stage: '2', q: 'Sound anomaly detection?', status: 'resolved', answer: 'Autoencoder on z_sound. Trained on healthy sounds only. Reconstruction error = anomaly score.' },
         { stage: '2b', q: 'Synthetic OBD pairing for sound?', status: 'resolved', answer: 'Map sound labels → OBD fault types. Add ±10% noise to prevent overfitting.' },
         { stage: '1', q: 'Anchor modality configurable?', status: 'resolved', answer: 'Yes. Config: anchor_modality: sound | vibration | obd' },
         // v2.1 Open Questions (from spec)
-        { stage: '2', q: 'Why CLAP 6-class accuracy only 35.7%?', status: 'open', answer: 'URGENT: Class imbalance (242 knock vs 57 squeal)? Domain gap? Need investigation.' },
+        { stage: '2', q: 'Why CLAP 6-class accuracy only 35.7%?', status: 'resolved', answer: 'Taxonomy issues: missing classes (clunk, rumble, grind), acoustic overlap. Fixed with 9-class hierarchy.' },
+        { stage: '2', q: 'Will 9-class taxonomy improve accuracy?', status: 'open', answer: 'IN PROGRESS: Expected 3-category >70%, 9-class ~50-60%. Testing required.' },
         { stage: '2', q: 'Multi-label vs multi-class for symptom head?', status: 'open', answer: 'Start with multi-label (knock AND rattle can co-occur). Evaluate if meaningful.' },
         { stage: '2', q: 'Per-FM anomaly AE or shared architecture?', status: 'open', answer: 'Leaning: Per-FM (embedding spaces differ significantly).' },
         { stage: '2', q: 'Audio with multiple distinct fault sounds?', status: 'open', answer: 'Option A: Classify entire clip. Option B: Segment then classify. Start with A.' },
@@ -1233,9 +1353,9 @@
       return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 p-4">
           <h1 className="text-xl font-bold text-center mb-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Vehicle Diagnostic Pipeline v5.0
+            Vehicle Diagnostic Pipeline v5.1
           </h1>
-          <p className="text-center text-slate-500 text-xs mb-4">Multimodal v2.1 Architecture • <span className="text-pink-400">✨ LLM Integration</span> • <span className="text-cyan-400">Configurable Anchor Modality</span></p>
+          <p className="text-center text-slate-500 text-xs mb-4">Multimodal v2.1 • <span className="text-yellow-400">9-Class Sound Taxonomy</span> • <span className="text-pink-400">✨ LLM</span> • <span className="text-cyan-400">Configurable Anchor</span></p>
 
           {/* View Toggle */}
           <div className="flex justify-center gap-1 mb-4 flex-wrap">
@@ -1265,7 +1385,7 @@
             </div>
             <div className="flex items-center gap-1">
               <span className="text-yellow-400">●</span>
-              <span className="text-slate-400">1/10 partial (Sound 35.7%)</span>
+              <span className="text-slate-400">1/10 partial (9-class taxonomy)</span>
             </div>
           </div>
 
@@ -1286,7 +1406,7 @@
           </div>
 
           <div className="text-center text-xs text-slate-600 mt-3">
-            v5.0 — Multimodal v2.1 | Stage 0 Preprocessing | Configurable Anchor | Swappable Sound FMs | Healthy Sound Logic | FM Eval Framework | Updated: 2026-01-24
+            v5.1 — Multimodal v2.1 | 9-Class Sound Taxonomy | Physics-Informed Hierarchy | Configurable Anchor | Updated: 2026-01-24
           </div>
         </div>
       );
