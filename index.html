@@ -485,6 +485,47 @@
               </div>
             </div>
           ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-3">
+              <div className="bg-orange-900/20 border border-orange-500/30 rounded p-3">
+                <div className="text-orange-400 font-semibold mb-2">합성 진동 데이터 생성 과정</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs space-y-1">
+                  <div className="text-slate-500"># 1. 물리 시뮬레이터 초기화</div>
+                  <div>VibrationFaultSimulator(engine_type=<span className="text-cyan-300">"inline_4"</span>)</div>
+                  <div className="text-slate-500 mt-2"># 2. 고장 유형 선택 (22가지)</div>
+                  <div>fault = <span className="text-yellow-300">ROD_BEARING_MID</span></div>
+                  <div className="text-slate-500 mt-2"># 3. 운전 조건 설정</div>
+                  <div>rpm=<span className="text-green-300">2500</span>, load=<span className="text-green-300">50%</span>, temp=<span className="text-green-300">90°C</span></div>
+                  <div className="text-slate-500 mt-2"># 4. 신호 생성 (2초, 25.6kHz)</div>
+                  <div>signal = simulator.generate() → <span className="text-yellow-300">[51200 samples]</span></div>
+                </div>
+                <div className="mt-2 text-slate-400">
+                  <strong>물리 모델:</strong> 엔진 구조 공진 + 베어링 충격 + 연소 펄스 + 비틀림 진동 + 센서 노이즈
+                </div>
+              </div>
+              <div className="bg-cyan-900/20 border border-cyan-500/30 rounded p-3">
+                <div className="text-cyan-400 font-semibold mb-2">YouTube 오디오 수집 및 전처리</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs space-y-1">
+                  <div className="text-slate-500"># 1. 검색 및 다운로드</div>
+                  <div>query = <span className="text-cyan-300">"rod knock sound engine"</span></div>
+                  <div>yt-dlp → audio.wav</div>
+                  <div className="text-slate-500 mt-2"># 2. 전처리</div>
+                  <div>리샘플링: <span className="text-yellow-300">48kHz</span> (CLAP 네이티브)</div>
+                  <div>모노 변환 + 정규화 [-1, 1]</div>
+                  <div className="text-slate-500 mt-2"># 3. 품질 검증</div>
+                  <div>CLAP 임베딩 → 코사인 유사도 → 이상치 제거</div>
+                </div>
+              </div>
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded p-3">
+                <div className="text-blue-400 font-semibold mb-2">OBD-II 합성 페어링</div>
+                <div className="text-slate-400">
+                  <div>• 오디오 레이블 → OBD 고장 유형 매핑</div>
+                  <div>• 예: <span className="text-cyan-300">rod_knock</span> → STFT +12%, LTFT +18%</div>
+                  <div>• ±10% 노이즈 추가로 과적합 방지</div>
+                </div>
+              </div>
+            </div>
+          ),
         },
         {
           n: '1', title: '진동 사전학습', type: 'physics', validation: 'new',
@@ -505,6 +546,59 @@
                   <div className="text-purple-400 font-semibold">결과</div>
                   <div className="text-white font-bold">63.9%</div>
                   <div className="text-slate-400">(현실적 물리)</div>
+                </div>
+              </div>
+            </div>
+          ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-3">
+              <div className="bg-orange-900/20 border border-orange-500/30 rounded p-3">
+                <div className="text-orange-400 font-semibold mb-2">물리 시뮬레이터 작동 원리</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># 베이스라인 신호 생성</div>
+                  <div>baseline = combustion_pulses(firing_order) <span className="text-slate-500"># 실린더별 연소</span></div>
+                  <div>         + torsional_vibration(harmonics) <span className="text-slate-500"># 크랭크 비틀림</span></div>
+                  <div>         + piston_secondary(2x_order) <span className="text-slate-500"># 피스톤 측압</span></div>
+                  <div className="text-slate-500 mt-2"># 고장 신호 추가</div>
+                  <div>fault_sig = bearing_impact(crank_angle=15°) <span className="text-slate-500"># TDC 후 15°</span></div>
+                  <div>          × structural_transfer_function <span className="text-slate-500"># 엔진 블록 공진</span></div>
+                  <div className="text-slate-500 mt-2"># 최종 신호</div>
+                  <div>signal = baseline + fault_sig + sensor_noise</div>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div className="bg-slate-800 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">저널 베어링 물리</div>
+                    <div className="text-slate-400 mt-1">
+                      <div>• 로드 베어링: 2× 오더 (TDC 충격)</div>
+                      <div>• 메인 베어링: 1× 오더 (하중 피크)</div>
+                      <div>• 오일 훨: 0.43× (심각시)</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-800 rounded p-2">
+                    <div className="text-cyan-400 font-semibold">엔진 구조 모드</div>
+                    <div className="text-slate-400 mt-1">
+                      <div>• 1차 굽힘: 800-1200 Hz</div>
+                      <div>• 크랭크케이스 호흡: 1500-2500 Hz</div>
+                      <div>• 베어링 하우징: 3000-5000 Hz</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+                <div className="text-green-400 font-semibold mb-2">CNN 인코더 아키텍처</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># 입력: 시계열 신호</div>
+                  <div>signal[51200] → <span className="text-cyan-300">SignalToSpectrogram</span>(n_mels=64)</div>
+                  <div className="text-slate-500 mt-1"># CNN 블록 (4단계)</div>
+                  <div>Block1: (1,64,T) → Conv+BN+ReLU+Pool → (32,32,T/2)</div>
+                  <div>Block2: (32,32,T/2) → Conv+BN+ReLU+Pool → (64,16,T/4)</div>
+                  <div>Block3: (64,16,T/4) → Conv+BN+ReLU+Pool → (128,8,T/8)</div>
+                  <div>Block4: (128,8,T/8) → Conv+BN+ReLU+Pool → (256,4,T/16)</div>
+                  <div className="text-slate-500 mt-1"># 출력: 임베딩</div>
+                  <div>GlobalAvgPool → MLP → L2Norm → <span className="text-yellow-300">embedding[256]</span></div>
+                </div>
+                <div className="mt-2 text-slate-400">
+                  <strong>학습:</strong> 30 에포크, batch=32, lr=1e-4, CrossEntropyLoss
                 </div>
               </div>
             </div>
@@ -533,6 +627,61 @@
               </div>
             </div>
           ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-3">
+              <div className="bg-cyan-900/20 border border-cyan-500/30 rounded p-3">
+                <div className="text-cyan-400 font-semibold mb-2">AST (Audio Spectrogram Transformer)</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># 1. 전처리</div>
+                  <div>audio → resample(<span className="text-yellow-300">16kHz</span>) → normalize</div>
+                  <div className="text-slate-500 mt-1"># 2. 스펙트로그램 변환</div>
+                  <div>mel_spec = MelSpectrogram(n_mels=128, hop=160)</div>
+                  <div className="text-slate-500 mt-1"># 3. 패치 임베딩</div>
+                  <div>patches = split_into_patches(16×16) → linear_projection</div>
+                  <div className="text-slate-500 mt-1"># 4. Transformer 인코더</div>
+                  <div>12 layers × (Self-Attention + FFN)</div>
+                  <div className="text-slate-500 mt-1"># 5. 출력</div>
+                  <div>[CLS] token → <span className="text-yellow-300">embedding[768]</span></div>
+                </div>
+                <div className="mt-2 text-slate-400">
+                  <strong>사전학습:</strong> AudioSet (2M 클립, 527 클래스)
+                </div>
+              </div>
+              <div className="bg-pink-900/20 border border-pink-500/30 rounded p-3">
+                <div className="text-pink-400 font-semibold mb-2">CLAP 멀티스케일 특징 추출</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># 멀티스케일 윈도우 (3개 시간 척도)</div>
+                  <div>windows = [<span className="text-cyan-300">3초</span>, <span className="text-cyan-300">5초</span>, <span className="text-cyan-300">7초</span>]</div>
+                  <div className="text-slate-500 mt-1"># 각 윈도우에서 CLAP 임베딩 추출</div>
+                  <div>emb_3s = CLAP.encode(audio[:3s]) → [512]</div>
+                  <div>emb_5s = CLAP.encode(audio[:5s]) → [512]</div>
+                  <div>emb_7s = CLAP.encode(audio[:7s]) → [512]</div>
+                  <div className="text-slate-500 mt-1"># 풀링 연산</div>
+                  <div>mean_pool = mean([emb_3s, emb_5s, emb_7s]) → [512]</div>
+                  <div>max_pool = max([emb_3s, emb_5s, emb_7s]) → [512]</div>
+                  <div>std_pool = std([emb_3s, emb_5s, emb_7s]) → [512]</div>
+                  <div className="text-slate-500 mt-1"># 최종 결합</div>
+                  <div>concat([emb_3s, emb_5s, emb_7s, mean, max, std])</div>
+                  <div>→ <span className="text-yellow-300">CLAP_features[3072]</span></div>
+                </div>
+              </div>
+              <div className="bg-yellow-900/20 border border-yellow-500/30 rounded p-3">
+                <div className="text-yellow-400 font-semibold mb-2">특징 결합 및 차원 축소</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># AST + CLAP 결합</div>
+                  <div>combined = concat([AST[768], CLAP[3072]])</div>
+                  <div>→ <span className="text-cyan-300">combined[3840]</span></div>
+                  <div className="text-slate-500 mt-2"># PCA 차원 축소</div>
+                  <div>PCA(n_components=512, whiten=True)</div>
+                  <div>분산 유지율: <span className="text-green-300">93.9%</span></div>
+                  <div>→ <span className="text-yellow-300">features[512]</span></div>
+                </div>
+                <div className="mt-2 text-slate-400">
+                  <strong>효과:</strong> 노이즈 제거 + 7배 압축 + 일반화 성능 +1% 향상
+                </div>
+              </div>
+            </div>
+          ),
         },
         {
           n: '3', title: '분류 & 이상탐지', type: 'hybrid', validation: 'validated',
@@ -552,6 +701,64 @@
               </div>
             </div>
           ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-3">
+              <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+                <div className="text-green-400 font-semibold mb-2">SVM RBF 분류기 작동 원리</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># RBF (Radial Basis Function) 커널</div>
+                  <div>K(x, y) = exp(-γ × ||x - y||²)</div>
+                  <div className="text-slate-500 mt-2"># 결정 함수</div>
+                  <div>f(x) = Σ αᵢ × yᵢ × K(xᵢ, x) + b</div>
+                  <div className="text-slate-500 mt-2"># 하이퍼파라미터</div>
+                  <div>C = <span className="text-yellow-300">10</span> (정규화 강도)</div>
+                  <div>γ = <span className="text-yellow-300">auto</span> (1 / n_features)</div>
+                  <div className="text-slate-500 mt-2"># 클래스 가중치 (불균형 보정)</div>
+                  <div>class_weight = <span className="text-cyan-300">'balanced'</span></div>
+                  <div>wᵢ = n_samples / (n_classes × count(classᵢ))</div>
+                </div>
+                <div className="mt-2 text-slate-400">
+                  <strong>왜 SVM?</strong> 고차원(512)에서 효과적, 과적합 방지, 적은 데이터에 강건
+                </div>
+              </div>
+              <div className="bg-purple-900/20 border border-purple-500/30 rounded p-3">
+                <div className="text-purple-400 font-semibold mb-2">Isolation Forest 이상 탐지</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># 원리: 이상치는 고립시키기 쉽다</div>
+                  <div className="mt-1">1. 랜덤 특징 선택</div>
+                  <div>2. 랜덤 분할점 선택 (min ~ max 사이)</div>
+                  <div>3. 재귀적으로 트리 구축</div>
+                  <div>4. <span className="text-yellow-300">경로 길이</span> = 고립에 필요한 분할 수</div>
+                  <div className="text-slate-500 mt-2"># 이상 점수 계산</div>
+                  <div>s(x) = 2^(-E[h(x)] / c(n))</div>
+                  <div>• s ≈ 1: 확실한 이상</div>
+                  <div>• s ≈ 0.5: 정상</div>
+                  <div>• s < 0.5: 매우 정상</div>
+                  <div className="text-slate-500 mt-2"># 하이퍼파라미터</div>
+                  <div>n_estimators = <span className="text-yellow-300">100</span></div>
+                  <div>contamination = <span className="text-yellow-300">0.1</span></div>
+                </div>
+              </div>
+              <div className="bg-slate-800 rounded p-3">
+                <div className="text-slate-300 font-semibold mb-2">11클래스 분류 체계</div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="text-center">
+                    <div className="text-red-400 font-semibold">충격성</div>
+                    <div className="text-slate-500">knock, tick, clunk</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-blue-400 font-semibold">음조성</div>
+                    <div className="text-slate-500">whine, squeal, misfire</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-green-400 font-semibold">잡음성</div>
+                    <div className="text-slate-500">rattle, hiss, grind</div>
+                  </div>
+                </div>
+                <div className="text-center mt-2 text-slate-400">+ healthy + wheel_bearing</div>
+              </div>
+            </div>
+          ),
         },
         {
           n: '4', title: '지식 그래프 쿼리', type: 'symbolic', validation: 'validated',
@@ -566,6 +773,60 @@
               </div>
             </div>
           ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-3">
+              <div className="bg-purple-900/20 border border-purple-500/30 rounded p-3">
+                <div className="text-purple-400 font-semibold mb-2">지식 그래프 구조 (이분 그래프)</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># 노드 유형</div>
+                  <div><span className="text-red-400">고장 노드</span>: 30개 (진동 22 + OBD 8)</div>
+                  <div><span className="text-cyan-400">증상 노드</span>: 59개 (소리 9 + 진동 15 + OBD 20 + DTC 15)</div>
+                  <div className="text-slate-500 mt-2"># 에지: 고장 → 증상 (조건부 확률)</div>
+                  <div><span className="text-red-400">rod_bearing</span> ──0.90──→ <span className="text-cyan-300">sound_knock</span></div>
+                  <div><span className="text-red-400">rod_bearing</span> ──0.85──→ <span className="text-green-300">vib_high_kurtosis</span></div>
+                  <div><span className="text-red-400">rod_bearing</span> ──0.90──→ <span className="text-green-300">vib_2x_order</span></div>
+                  <div><span className="text-orange-400">vacuum_leak</span> ──0.90──→ <span className="text-cyan-300">sound_hiss</span></div>
+                  <div><span className="text-orange-400">vacuum_leak</span> ──0.95──→ <span className="text-blue-300">dtc_p0171</span></div>
+                </div>
+              </div>
+              <div className="bg-cyan-900/20 border border-cyan-500/30 rounded p-3">
+                <div className="text-cyan-400 font-semibold mb-2">쿼리 알고리즘 (4단계)</div>
+                <div className="space-y-2">
+                  <div className="bg-slate-900 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">1단계: 증상 수집</div>
+                    <div className="font-mono text-xs mt-1">
+                      <div>all_symptoms = {'{'}</div>
+                      <div className="text-cyan-300 ml-2">"sound_knock": 0.85, <span className="text-slate-500"># 분류기 출력</span></div>
+                      <div className="text-green-300 ml-2">"vib_high_kurtosis": 0.92, "vib_2x_order": 0.78,</div>
+                      <div className="text-purple-300 ml-2">"condition_under_load": 0.9 <span className="text-slate-500"># 사용자 NLU</span></div>
+                      <div>{'}'}</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">2단계: 역방향 조회</div>
+                    <div className="font-mono text-xs mt-1">
+                      <div className="text-slate-500"># 각 증상에서 해당 고장 찾기</div>
+                      <div><span className="text-cyan-300">"sound_knock"</span> → rod_bearing(0.90), main_bearing(0.75)</div>
+                      <div><span className="text-green-300">"vib_2x_order"</span> → rod_bearing(0.90), piston_slap(0.60)</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">3단계: 누락 증거 페널티</div>
+                    <div className="font-mono text-xs mt-1">
+                      <div className="text-slate-500"># rod_bearing 예상: [knock✓, kurtosis✓, 2x✓] → 페널티 없음</div>
+                      <div className="text-slate-500"># main_bearing 예상: [knock✓, 1x✗] → 페널티 -0.05</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900 rounded p-2">
+                    <div className="text-yellow-400 font-semibold">4단계: 사전확률 + 정규화</div>
+                    <div className="font-mono text-xs mt-1">
+                      <div>final_score = 0.8 × evidence + 0.2 × prior</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ),
         },
         {
           n: '5', title: '연역적 필터링', type: 'symbolic', validation: 'validated',
@@ -575,6 +836,55 @@
               <div className="grid grid-cols-2 gap-2">
                 <div className="text-slate-400">• 물리: RPM, 온도, 부하, 발생시점</div>
                 <div className="text-slate-400">• 시스템: 연료 트림, DTC 논리</div>
+              </div>
+            </div>
+          ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-3">
+              <div className="bg-red-900/20 border border-red-500/30 rounded p-3">
+                <div className="text-red-400 font-semibold mb-2">경성 제약조건 (불가능 제거)</div>
+                <div className="bg-slate-900 rounded p-2 space-y-2">
+                  <div>
+                    <span className="text-red-400 font-semibold">DTC 논리:</span>
+                    <div className="text-slate-400 ml-2">P0171 (희박) 존재 → "과농" 고장 제거</div>
+                    <div className="text-slate-400 ml-2">P0300 (실화) 없음 → 점화 계통 고장 가능성 ↓</div>
+                  </div>
+                  <div>
+                    <span className="text-red-400 font-semibold">물리 제약:</span>
+                    <div className="text-slate-400 ml-2">냉간 시동시만 발생 → 열 관련 고장 제거</div>
+                    <div className="text-slate-400 ml-2">주행 중에만 발생 → 아이들 관련 고장 제거</div>
+                  </div>
+                  <div>
+                    <span className="text-red-400 font-semibold">발생 시점:</span>
+                    <div className="text-slate-400 ml-2">갑작스러운 발생 → 마모 관련 고장 제거</div>
+                    <div className="text-slate-400 ml-2">점진적 악화 → 충돌/충격 고장 제거</div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-yellow-900/20 border border-yellow-500/30 rounded p-3">
+                <div className="text-yellow-400 font-semibold mb-2">연성 제약조건 (신뢰도 조정)</div>
+                <div className="bg-slate-900 rounded p-2 space-y-2">
+                  <div>
+                    <span className="text-yellow-400 font-semibold">주행거리:</span>
+                    <div className="text-slate-400 ml-2">고주행 (>150,000km) → 베어링/체인 마모 ↑</div>
+                  </div>
+                  <div>
+                    <span className="text-yellow-400 font-semibold">연료 트림:</span>
+                    <div className="text-slate-400 ml-2">LTFT > +15% → 연료 시스템 고장 ↑</div>
+                  </div>
+                  <div>
+                    <span className="text-yellow-400 font-semibold">부하 상관관계:</span>
+                    <div className="text-slate-400 ml-2">부하 시 악화 → 베어링 고장 ↑</div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+                <div className="text-green-400 font-semibold mb-2">안전 바닥 (Floor)</div>
+                <div className="text-slate-400">
+                  <div>• 모든 후보가 제거되지 않도록 보장</div>
+                  <div>• 최소 1개 가설 항상 유지</div>
+                  <div>• "알 수 없음" 보다 "불확실하지만 가능성 있음"</div>
+                </div>
               </div>
             </div>
           ),
@@ -597,6 +907,63 @@
               </div>
             </div>
           ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-3">
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded p-3">
+                <div className="text-blue-400 font-semibold mb-2">베이지안 스코어링 공식</div>
+                <div className="bg-slate-900 rounded p-2">
+                  <div className="text-center text-lg font-mono text-blue-300 py-2">
+                    P(고장|증거) ∝ P(증거|고장) × P(고장)
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <div><span className="text-yellow-400">P(증거|고장)</span>: KG 에지 가중치 (0~1)</div>
+                    <div><span className="text-yellow-400">P(고장)</span>: 사전 확률 (고장 빈도 기반)</div>
+                    <div><span className="text-yellow-400">진단 가중치</span>: 증상별 중요도</div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-slate-900 rounded p-3">
+                <div className="text-slate-300 font-semibold mb-2">스코어링 예시</div>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="bg-blue-900/30 rounded p-2">
+                    <div className="text-blue-300 font-semibold">로드 베어링</div>
+                    <div className="text-slate-400 text-xs mt-1">
+                      <div>+0.30 knock 일치</div>
+                      <div>+0.25 부하시 악화</div>
+                      <div>+0.20 2x 오더 검출</div>
+                      <div>+0.10 고 첨도</div>
+                      <div className="border-t border-slate-700 mt-1 pt-1">
+                        <span className="text-green-400 font-bold">= 0.85</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-800 rounded p-2">
+                    <div className="text-slate-400 font-semibold">메인 베어링</div>
+                    <div className="text-slate-500 text-xs mt-1">
+                      <div>+0.30 knock 일치</div>
+                      <div>+0.15 부하시 악화</div>
+                      <div>-0.15 1x 오더 없음</div>
+                      <div>-0.10 주파수 불일치</div>
+                      <div className="border-t border-slate-700 mt-1 pt-1">
+                        <span className="text-slate-400 font-bold">= 0.12</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+                <div className="text-green-400 font-semibold mb-2">귀추적 추론이란?</div>
+                <div className="text-slate-400">
+                  <div><strong>귀추법 (Abduction):</strong> 관찰된 증거를 가장 잘 설명하는 가설 선택</div>
+                  <div className="mt-2">
+                    <div>• <span className="text-cyan-300">연역</span>: 규칙 + 원인 → 결과 예측</div>
+                    <div>• <span className="text-yellow-300">귀납</span>: 많은 관찰 → 규칙 도출</div>
+                    <div>• <span className="text-green-300">귀추</span>: 결과 + 규칙 → 최적 원인 추론</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ),
         },
         {
           n: '7', title: '출력', type: 'hybrid', validation: 'validated', llm: true,
@@ -611,6 +978,75 @@
               </div>
               <div className="bg-pink-900/20 border border-pink-500/30 rounded p-2 text-pink-200 italic">
                 "노킹 소리와 2x 오더 고조파의 조합은 로드 베어링 간극 증가를 나타냅니다..."
+              </div>
+            </div>
+          ),
+          details: (
+            <div className="text-xs text-slate-300 space-y-3">
+              <div className="bg-pink-900/20 border border-pink-500/30 rounded p-3">
+                <div className="text-pink-400 font-semibold mb-2">LLM 설명 생성 과정</div>
+                <div className="bg-slate-900 rounded p-2 font-mono text-xs">
+                  <div className="text-slate-500"># 1. 진단 결과 구조화</div>
+                  <div>diagnosis = {'{'}</div>
+                  <div className="ml-2">"fault": "rod_bearing",</div>
+                  <div className="ml-2">"confidence": 0.72,</div>
+                  <div className="ml-2">"evidence": ["sound_knock", "vib_2x_order", "under_load"],</div>
+                  <div className="ml-2">"reasoning_path": [KG edges...]</div>
+                  <div>{'}'}</div>
+                  <div className="text-slate-500 mt-2"># 2. LLM 프롬프트 구성</div>
+                  <div className="text-pink-300">"사용자가 '{'{user_description}'}'라고 설명했습니다.</div>
+                  <div className="text-pink-300">진단 결과와 증거를 바탕으로 이해하기 쉽게 설명해주세요."</div>
+                  <div className="text-slate-500 mt-2"># 3. 자연어 보고서 생성</div>
+                  <div>LLM → 맥락 인식, 다국어 (한/영) 지원</div>
+                </div>
+              </div>
+              <div className="bg-slate-900 rounded p-3">
+                <div className="text-slate-300 font-semibold mb-2">출력 구성요소</div>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <span className="text-green-400">●</span>
+                    <div>
+                      <span className="text-green-400 font-semibold">진단:</span>
+                      <span className="text-slate-400"> 고장명 + 신뢰도 %</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-pink-400">●</span>
+                    <div>
+                      <span className="text-pink-400 font-semibold">설명:</span>
+                      <span className="text-slate-400"> LLM 생성 추론 내러티브</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-blue-400">●</span>
+                    <div>
+                      <span className="text-blue-400 font-semibold">조치:</span>
+                      <span className="text-slate-400"> 우선순위화된 확인 단계</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-yellow-400">●</span>
+                    <div>
+                      <span className="text-yellow-400 font-semibold">긴급도:</span>
+                      <span className="text-slate-400"> 즉시 / 조속 / 예약 / 모니터링</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-slate-900 rounded p-3">
+                <div className="text-slate-300 font-semibold mb-2">계층적 폴백</div>
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <span className="bg-green-900/50 text-green-400 px-2 py-1 rounded">rod_bearing (>60%)</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="bg-yellow-900/50 text-yellow-400 px-2 py-1 rounded">하부 엔드 문제 (40-60%)</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="bg-orange-900/50 text-orange-400 px-2 py-1 rounded">엔진 기계적 문제 (20-40%)</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="bg-red-900/50 text-red-400 px-2 py-1 rounded">전문가 점검 권장 (<20%)</span>
+                </div>
+                <div className="mt-2 text-slate-400">
+                  <strong>목적:</strong> 증거가 부족해도 항상 실행 가능한 안내 제공
+                </div>
               </div>
             </div>
           ),
@@ -636,6 +1072,22 @@
                   </div>
                   {s.content}
                 </div>
+                {s.details && (
+                  <>
+                    <button
+                      onClick={() => setExpanded(expanded === i ? null : i)}
+                      className="w-full px-3 py-1.5 bg-slate-800/50 border-t border-slate-700 flex items-center justify-between text-xs text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-colors"
+                    >
+                      <span>상세 보기</span>
+                      <span className="text-lg">{expanded === i ? '−' : '+'}</span>
+                    </button>
+                    {expanded === i && (
+                      <div className="px-3 py-3 bg-slate-800/30 border-t border-slate-700">
+                        {s.details}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
               {i < stages.length - 1 && <Arrow />}
             </div>
