@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vehicle Diagnostic Pipeline v6.0</title>
+  <title>차량 진단 파이프라인 v6.0</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -37,10 +37,10 @@
         new: 'bg-purple-500/20 text-purple-400 border-purple-500/50',
       };
       const labels = {
-        validated: '✓ Validated',
-        partial: '◐ Partial',
-        unvalidated: '○ Pending',
-        new: '★ New',
+        validated: '✓ 검증완료',
+        partial: '◐ 부분검증',
+        unvalidated: '○ 대기중',
+        new: '★ 신규',
       };
       return (
         <span className={`text-xs px-2 py-0.5 rounded border ${styles[status]}`}>
@@ -56,9 +56,15 @@
         hybrid: 'bg-blue-500/20 text-blue-300',
         physics: 'bg-orange-500/20 text-orange-300',
       };
+      const labels = {
+        neural: '신경망',
+        symbolic: '기호적',
+        hybrid: '하이브리드',
+        physics: '물리기반',
+      };
       return type ? (
         <span className={`text-xs px-2 py-0.5 rounded ${styles[type]}`}>
-          {type.charAt(0).toUpperCase() + type.slice(1)}
+          {labels[type]}
         </span>
       ) : null;
     };
@@ -71,40 +77,40 @@
       ) : null;
     };
 
-    // Executive View - Simple flow with current results
+    // 개요 뷰 - 현재 결과 포함
     const ExecutiveView = () => {
       const stages = [
-        { n: '0', title: 'Data Sources', desc: 'YouTube Audio (2733) + Synthetic Vibration (6600) + OBD', validation: 'validated', note: 'Multi-modal' },
-        { n: '1', title: 'Synthetic Pre-training', desc: 'Physics-based vibration: 22 faults × 7 engines × scenarios', validation: 'new', note: '63.9% (22-class)', physics: true },
-        { n: '2', title: 'Audio Encoding', desc: 'AST (768d) + CLAP multi-scale (3072d) = 3840d', validation: 'validated', note: '52.4% (11-class)' },
-        { n: '2.5', title: 'Feature Fusion', desc: 'PCA 512 → SVM RBF classification', validation: 'validated', note: 'Best config' },
-        { n: '3', title: 'Evidence Extraction', desc: '11-class symptoms + anomaly score (AUC=0.777)', validation: 'validated', note: 'AST+CLAP' },
-        { n: '4', title: 'Knowledge Graph Query', desc: 'Fault KB → candidate hypotheses (22 vibration + 8 OBD faults)', validation: 'validated', note: '30 fault types' },
-        { n: '5', title: 'Deductive Filtering', desc: 'Physics constraints eliminate impossible faults', validation: 'validated', note: '100% Precision' },
-        { n: '6', title: 'Abductive Ranking', desc: 'Evidence-Weighted Bayesian Scoring', validation: 'validated', note: 'Recall@3: 84.2%' },
-        { n: '7', title: 'Output', desc: 'Diagnosis + LLM Explanation + Actions', validation: 'validated', note: 'LLM Report', llm: true },
+        { n: '0', title: '데이터 소스', desc: 'YouTube 오디오 (2733개) + 합성 진동 (6600개) + OBD', validation: 'validated', note: '멀티모달' },
+        { n: '1', title: '합성 사전학습', desc: '물리기반 진동: 22개 고장 × 7개 엔진 × 시나리오', validation: 'new', note: '63.9% (22클래스)', physics: true },
+        { n: '2', title: '오디오 인코딩', desc: 'AST (768차원) + CLAP 멀티스케일 (3072차원) = 3840차원', validation: 'validated', note: '52.4% (11클래스)' },
+        { n: '2.5', title: '특징 융합', desc: 'PCA 512 → SVM RBF 분류', validation: 'validated', note: '최적 구성' },
+        { n: '3', title: '증거 추출', desc: '11클래스 증상 + 이상 점수 (AUC=0.777)', validation: 'validated', note: 'AST+CLAP' },
+        { n: '4', title: '지식 그래프 쿼리', desc: '고장 KB → 후보 가설 (진동 22개 + OBD 8개 고장)', validation: 'validated', note: '30개 고장 유형' },
+        { n: '5', title: '연역적 필터링', desc: '물리적 제약조건으로 불가능한 고장 제거', validation: 'validated', note: '정밀도 100%' },
+        { n: '6', title: '귀추적 순위화', desc: '증거 가중 베이지안 스코어링', validation: 'validated', note: 'Recall@3: 84.2%' },
+        { n: '7', title: '출력', desc: '진단 + LLM 설명 + 조치사항', validation: 'validated', note: 'LLM 보고서', llm: true },
       ];
 
       return (
         <div className="space-y-1">
-          {/* Current Results Summary */}
+          {/* 현재 최고 결과 요약 */}
           <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded-lg p-3 mb-4 border border-green-500/30">
-            <div className="text-green-400 font-bold text-sm mb-2">Current Best Results (2026-01-28)</div>
+            <div className="text-green-400 font-bold text-sm mb-2">현재 최고 성능 (2026-01-28)</div>
             <div className="grid grid-cols-3 gap-3 text-xs">
               <div className="bg-slate-900/50 rounded p-2 text-center">
                 <div className="text-2xl font-bold text-orange-400">63.9%</div>
-                <div className="text-slate-400">Vibration Encoder</div>
-                <div className="text-slate-500">(22 faults, physics-corrected)</div>
+                <div className="text-slate-400">진동 인코더</div>
+                <div className="text-slate-500">(22개 고장, 물리 보정)</div>
               </div>
               <div className="bg-slate-900/50 rounded p-2 text-center">
                 <div className="text-2xl font-bold text-cyan-400">52.4%</div>
-                <div className="text-slate-400">Audio Classification</div>
-                <div className="text-slate-500">(11-class, quality-verified)</div>
+                <div className="text-slate-400">오디오 분류</div>
+                <div className="text-slate-500">(11클래스, 품질 검증)</div>
               </div>
               <div className="bg-slate-900/50 rounded p-2 text-center">
                 <div className="text-2xl font-bold text-purple-400">0.777</div>
-                <div className="text-slate-400">Anomaly AUC</div>
-                <div className="text-slate-500">(AST+CLAP Ensemble)</div>
+                <div className="text-slate-400">이상탐지 AUC</div>
+                <div className="text-slate-500">(AST+CLAP 앙상블)</div>
               </div>
             </div>
           </div>
@@ -134,174 +140,174 @@
       );
     };
 
-    // Vibration Pre-training View - NEW
+    // 진동 사전학습 뷰 - 신규
     const VibrationView = () => {
       return (
         <div className="space-y-4 text-xs">
           <div className="text-center text-slate-400 mb-4">
-            Synthetic Vibration Pre-training Pipeline (Physics-First Approach)
+            합성 진동 사전학습 파이프라인 (물리 우선 접근법)
           </div>
 
-          {/* Why Vibration First */}
+          {/* 왜 진동을 먼저 하는가 */}
           <div className="bg-gradient-to-r from-orange-900/30 to-yellow-900/30 rounded-lg p-4 border border-orange-500/50">
-            <div className="text-orange-400 font-bold mb-2">Why Synthetic Vibration as Anchor Modality?</div>
+            <div className="text-orange-400 font-bold mb-2">왜 합성 진동을 앵커 모달리티로?</div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-900/50 rounded p-2">
-                <div className="text-green-400 font-semibold">Advantages</div>
+                <div className="text-green-400 font-semibold">장점</div>
                 <div className="text-slate-400 mt-1">
-                  <div>• Physics is deterministic & well-understood</div>
-                  <div>• Unlimited labeled training data</div>
-                  <div>• Same fault signatures in both modalities</div>
-                  <div>• No recording quality issues</div>
+                  <div>• 물리 법칙이 결정론적 & 잘 이해됨</div>
+                  <div>• 무제한 레이블 학습 데이터</div>
+                  <div>• 동일한 고장 시그니처가 양쪽 모달리티에</div>
+                  <div>• 녹음 품질 문제 없음</div>
                 </div>
               </div>
               <div className="bg-slate-900/50 rounded p-2">
-                <div className="text-cyan-400 font-semibold">Transfer Path</div>
+                <div className="text-cyan-400 font-semibold">전이 경로</div>
                 <div className="text-slate-400 mt-1">
-                  <div>• Engine block = cast iron/aluminum</div>
-                  <div>• Same resonance modes appear in audio</div>
-                  <div>• Different transfer functions only</div>
-                  <div>• Shared embedding space enables transfer</div>
+                  <div>• 엔진 블록 = 주철/알루미늄</div>
+                  <div>• 동일한 공진 모드가 오디오에도</div>
+                  <div>• 전달 함수만 다름</div>
+                  <div>• 공유 임베딩 공간으로 전이 가능</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 22 Fault Types */}
+          {/* 22개 고장 유형 */}
           <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-            <div className="text-yellow-400 font-bold mb-3">22 Fault Types (OBD Cannot Detect!)</div>
+            <div className="text-yellow-400 font-bold mb-3">22개 고장 유형 (OBD가 감지 못함!)</div>
             <div className="grid grid-cols-5 gap-2">
               <div className="bg-red-900/20 border border-red-500/30 rounded p-2">
-                <div className="text-red-400 font-semibold text-xs mb-1">Engine Internal (8)</div>
+                <div className="text-red-400 font-semibold text-xs mb-1">엔진 내부 (8개)</div>
                 <div className="text-slate-400 text-xs space-y-0.5">
-                  <div>• rod_bearing (3 stages)</div>
-                  <div>• main_bearing</div>
-                  <div>• piston_slap</div>
-                  <div>• vanos_rattle</div>
-                  <div>• timing_chain</div>
-                  <div>• valvetrain_tick</div>
+                  <div>• 커넥팅로드 베어링 (3단계)</div>
+                  <div>• 메인 베어링</div>
+                  <div>• 피스톤 슬랩</div>
+                  <div>• 바노스 래틀</div>
+                  <div>• 타이밍 체인</div>
+                  <div>• 밸브트레인 틱</div>
                 </div>
-                <div className="text-red-300 text-xs mt-1">$10-20k engine</div>
+                <div className="text-red-300 text-xs mt-1">엔진 $10-20k</div>
               </div>
               <div className="bg-blue-900/20 border border-blue-500/30 rounded p-2">
-                <div className="text-blue-400 font-semibold text-xs mb-1">Accessory (5)</div>
+                <div className="text-blue-400 font-semibold text-xs mb-1">보조장치 (5개)</div>
                 <div className="text-slate-400 text-xs space-y-0.5">
-                  <div>• water_pump</div>
-                  <div>• alternator</div>
-                  <div>• ac_compressor</div>
-                  <div>• power_steering</div>
-                  <div>• belt_tensioner</div>
+                  <div>• 워터펌프</div>
+                  <div>• 알터네이터</div>
+                  <div>• 에어컨 컴프레서</div>
+                  <div>• 파워스티어링</div>
+                  <div>• 벨트 텐셔너</div>
                 </div>
-                <div className="text-blue-300 text-xs mt-1">Stranded risk</div>
+                <div className="text-blue-300 text-xs mt-1">멈춤 위험</div>
               </div>
               <div className="bg-purple-900/20 border border-purple-500/30 rounded p-2">
-                <div className="text-purple-400 font-semibold text-xs mb-1">Turbo (3)</div>
+                <div className="text-purple-400 font-semibold text-xs mb-1">터보 (3개)</div>
                 <div className="text-slate-400 text-xs space-y-0.5">
-                  <div>• turbo_bearing</div>
-                  <div>• wastegate_rattle</div>
-                  <div>• boost_leak</div>
+                  <div>• 터보 베어링</div>
+                  <div>• 웨이스트게이트 래틀</div>
+                  <div>• 부스트 누수</div>
                 </div>
-                <div className="text-purple-300 text-xs mt-1">$3-8k turbo</div>
+                <div className="text-purple-300 text-xs mt-1">터보 $3-8k</div>
               </div>
               <div className="bg-green-900/20 border border-green-500/30 rounded p-2">
-                <div className="text-green-400 font-semibold text-xs mb-1">Drivetrain (3)</div>
+                <div className="text-green-400 font-semibold text-xs mb-1">구동계 (3개)</div>
                 <div className="text-slate-400 text-xs space-y-0.5">
-                  <div>• wheel_bearing</div>
-                  <div>• cv_joint</div>
-                  <div>• differential</div>
+                  <div>• 휠 베어링</div>
+                  <div>• CV 조인트</div>
+                  <div>• 디퍼렌셜</div>
                 </div>
-                <div className="text-green-300 text-xs mt-1">SAFETY!</div>
+                <div className="text-green-300 text-xs mt-1">안전 위험!</div>
               </div>
               <div className="bg-orange-900/20 border border-orange-500/30 rounded p-2">
-                <div className="text-orange-400 font-semibold text-xs mb-1">Exhaust (2)</div>
+                <div className="text-orange-400 font-semibold text-xs mb-1">배기 (2개)</div>
                 <div className="text-slate-400 text-xs space-y-0.5">
-                  <div>• exhaust_leak</div>
-                  <div>• heat_shield</div>
+                  <div>• 배기 누출</div>
+                  <div>• 히트쉴드</div>
                 </div>
-                <div className="text-orange-300 text-xs mt-1">Fire risk</div>
+                <div className="text-orange-300 text-xs mt-1">화재 위험</div>
               </div>
             </div>
           </div>
 
-          {/* Physics Model */}
+          {/* 물리 모델 */}
           <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/50">
-            <div className="text-green-400 font-bold mb-3">Physics Model (Corrected 2026-01-28)</div>
+            <div className="text-green-400 font-bold mb-3">물리 모델 (2026-01-28 수정)</div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-900 rounded p-2">
-                <div className="text-yellow-400 font-semibold mb-2">Journal Bearing Physics (CORRECTED)</div>
+                <div className="text-yellow-400 font-semibold mb-2">저널 베어링 물리 (수정됨)</div>
                 <div className="text-slate-400 text-xs">
-                  <div className="text-red-400">OLD (Wrong): Ball-pass frequencies (BPFO/BPFI)</div>
-                  <div className="text-green-400 mt-1">NEW (Correct):</div>
-                  <div>• Rod bearing: Crank-angle-locked at 15° after TDC</div>
-                  <div>• Main bearing: 1× order at combined load peaks</div>
-                  <div>• Oil whirl: 0.43× shaft speed (severe only)</div>
+                  <div className="text-red-400">이전 (오류): 볼-패스 주파수 (BPFO/BPFI)</div>
+                  <div className="text-green-400 mt-1">수정 (정확):</div>
+                  <div>• 로드 베어링: TDC 후 15°에서 크랭크각 연동</div>
+                  <div>• 메인 베어링: 복합 하중 피크에서 1× 오더</div>
+                  <div>• 오일 훨: 0.43× 축 속도 (심각한 경우만)</div>
                 </div>
               </div>
               <div className="bg-slate-900 rounded p-2">
-                <div className="text-cyan-400 font-semibold mb-2">Realistic Baseline Physics</div>
+                <div className="text-cyan-400 font-semibold mb-2">현실적 베이스라인 물리</div>
                 <div className="text-slate-400 text-xs">
-                  <div>• Cylinder-by-cylinder combustion pulses</div>
-                  <div>• Cycle-to-cycle variability (CoV 5-12%)</div>
-                  <div>• Torsional vibration harmonics</div>
-                  <div>• Piston secondary motion (2× order)</div>
-                  <div>• Temperature effects (cold = 1.8× worse)</div>
+                  <div>• 실린더별 연소 펄스</div>
+                  <div>• 사이클간 변동성 (CoV 5-12%)</div>
+                  <div>• 비틀림 진동 고조파</div>
+                  <div>• 피스톤 2차 운동 (2× 오더)</div>
+                  <div>• 온도 효과 (냉간 = 1.8배 악화)</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Engine Configurations */}
+          {/* 엔진 구성 */}
           <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-500/50">
-            <div className="text-blue-400 font-bold mb-3">7 Engine Configurations</div>
+            <div className="text-blue-400 font-bold mb-3">7개 엔진 구성</div>
             <div className="grid grid-cols-7 gap-1 text-center">
-              {['I4', 'I4-CI', 'I6', 'V6-60', 'V6-90', 'V8', 'V8-CI'].map((eng, i) => (
+              {['I4', 'I4-주철', 'I6', 'V6-60', 'V6-90', 'V8', 'V8-주철'].map((eng, i) => (
                 <div key={i} className="bg-slate-900 rounded p-2">
                   <div className="text-cyan-300 font-semibold">{eng}</div>
-                  <div className="text-slate-500 text-xs">{['2nd', '2nd', '3rd', '3rd', '3rd', '4th', '4th'][i]} order</div>
+                  <div className="text-slate-500 text-xs">{['2차', '2차', '3차', '3차', '3차', '4차', '4차'][i]} 오더</div>
                 </div>
               ))}
             </div>
             <div className="mt-2 text-slate-400 text-xs">
-              Material properties: Aluminum (light, high-freq) vs Cast Iron (heavy, damped)
+              재질 특성: 알루미늄 (가볍고 고주파) vs 주철 (무겁고 감쇠)
             </div>
           </div>
 
-          {/* Dataset & Results */}
+          {/* 데이터셋 & 결과 */}
           <div className="bg-purple-900/20 rounded-lg p-4 border border-purple-500/50">
-            <div className="text-purple-400 font-bold mb-3">Training Results</div>
+            <div className="text-purple-400 font-bold mb-3">학습 결과</div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-900 rounded p-2">
-                <div className="text-orange-400 font-semibold mb-2">Original Dataset (1.35 GB)</div>
+                <div className="text-orange-400 font-semibold mb-2">원본 데이터셋 (1.35 GB)</div>
                 <div className="text-slate-400 text-xs">
-                  <div>• 6,600 signals (3 engines × 22 faults × 50 × 2)</div>
-                  <div>• Fixed RPM, simpler physics</div>
-                  <div className="text-green-400 mt-1">Test Accuracy: 81.9%</div>
-                  <div className="text-slate-500">(Easier signals)</div>
+                  <div>• 6,600개 신호 (3 엔진 × 22 고장 × 50 × 2)</div>
+                  <div>• 고정 RPM, 단순 물리</div>
+                  <div className="text-green-400 mt-1">테스트 정확도: 81.9%</div>
+                  <div className="text-slate-500">(쉬운 신호)</div>
                 </div>
               </div>
               <div className="bg-slate-900 rounded p-2 border border-green-500/30">
-                <div className="text-green-400 font-semibold mb-2">V2 Physics-Corrected (2.7 GB) ⭐</div>
+                <div className="text-green-400 font-semibold mb-2">V2 물리 보정 (2.7 GB) ⭐</div>
                 <div className="text-slate-400 text-xs">
-                  <div>• 6,600 signals (3 eng × 5 scenarios × 22 × 2 × 10)</div>
-                  <div>• Time-varying RPM, correct physics</div>
-                  <div className="text-yellow-400 mt-1">Test Accuracy: 63.9%</div>
-                  <div className="text-slate-500">(Realistic = harder but better transfer)</div>
+                  <div>• 6,600개 신호 (3 엔진 × 5 시나리오 × 22 × 2 × 10)</div>
+                  <div>• 시변 RPM, 정확한 물리</div>
+                  <div className="text-yellow-400 mt-1">테스트 정확도: 63.9%</div>
+                  <div className="text-slate-500">(현실적 = 어렵지만 전이 우수)</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Per-Class Results */}
+          {/* 클래스별 결과 */}
           <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-            <div className="text-slate-300 font-bold mb-3">Safety-Critical Fault Detection</div>
+            <div className="text-slate-300 font-bold mb-3">안전 핵심 고장 검출</div>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { fault: 'wheel_bearing', acc: '100%', risk: 'Wheel separation' },
-                { fault: 'turbo_bearing', acc: '100%', risk: 'Engine damage' },
-                { fault: 'differential', acc: '100%', risk: 'Drivetrain failure' },
-                { fault: 'main_bearing', acc: '96.5%', risk: 'Engine seizure' },
-                { fault: 'rod_severe', acc: '92.1%', risk: 'Catastrophic' },
-                { fault: 'cv_joint', acc: '85.7%', risk: 'Drivetrain failure' },
+                { fault: 'wheel_bearing', acc: '100%', risk: '휠 분리' },
+                { fault: 'turbo_bearing', acc: '100%', risk: '엔진 손상' },
+                { fault: 'differential', acc: '100%', risk: '구동계 고장' },
+                { fault: 'main_bearing', acc: '96.5%', risk: '엔진 세이즈' },
+                { fault: 'rod_severe', acc: '92.1%', risk: '치명적' },
+                { fault: 'cv_joint', acc: '85.7%', risk: '구동계 고장' },
               ].map((f, i) => (
                 <div key={i} className="bg-green-900/20 border border-green-500/30 rounded p-2 text-center">
                   <div className="text-green-400 font-mono text-xs">{f.fault}</div>
@@ -315,35 +321,35 @@
       );
     };
 
-    // Audio Classification View
+    // 오디오 분류 뷰
     const AudioView = () => {
       return (
         <div className="space-y-4 text-xs">
           <div className="text-center text-slate-400 mb-4">
-            Audio Classification Pipeline (Foundation Models)
+            오디오 분류 파이프라인 (기반 모델)
           </div>
 
-          {/* Audio Processing Chain */}
+          {/* 오디오 처리 체인 */}
           <div className="bg-cyan-900/20 rounded-lg p-4 border border-cyan-500/50">
-            <div className="text-cyan-400 font-bold mb-3">Audio Processing Pipeline</div>
+            <div className="text-cyan-400 font-bold mb-3">오디오 처리 파이프라인</div>
             <div className="bg-slate-900 rounded p-3 font-mono text-slate-400">
-              <div>Raw Audio (wav) → Resample to 48kHz → Mono</div>
+              <div>원본 오디오 (wav) → 48kHz 리샘플링 → 모노</div>
               <div className="text-slate-500 mt-1">↓</div>
-              <div className="text-cyan-300">AST Encoder (16kHz) → 768-dim embedding</div>
-              <div className="text-pink-300">CLAP Multi-scale (3s, 5s, 7s) → 3072-dim</div>
+              <div className="text-cyan-300">AST 인코더 (16kHz) → 768차원 임베딩</div>
+              <div className="text-pink-300">CLAP 멀티스케일 (3s, 5s, 7s) → 3072차원</div>
               <div className="text-slate-500 mt-1">↓</div>
-              <div className="text-yellow-300">Combined: 3840-dim → PCA 512 (93.9% variance)</div>
+              <div className="text-yellow-300">결합: 3840차원 → PCA 512 (93.9% 분산)</div>
               <div className="text-slate-500 mt-1">↓</div>
-              <div className="text-green-300">SVM RBF Classifier → 11 classes</div>
+              <div className="text-green-300">SVM RBF 분류기 → 11개 클래스</div>
             </div>
           </div>
 
-          {/* Dataset Stats */}
+          {/* 데이터셋 통계 */}
           <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/50">
-            <div className="text-green-400 font-bold mb-3">Dataset: 2,733 Samples (Quality-Verified)</div>
+            <div className="text-green-400 font-bold mb-3">데이터셋: 2,733개 샘플 (품질 검증)</div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-900 rounded p-2">
-                <div className="text-orange-400 font-semibold mb-2">Fault Samples: 2,304</div>
+                <div className="text-orange-400 font-semibold mb-2">고장 샘플: 2,304개</div>
                 <div className="text-slate-400 text-xs space-y-0.5">
                   <div>tick: 419 | rattle: 341 | whine: 322</div>
                   <div>knock: 269 | misfire: 224 | grind: 199</div>
@@ -352,36 +358,36 @@
                 </div>
               </div>
               <div className="bg-slate-900 rounded p-2">
-                <div className="text-cyan-400 font-semibold mb-2">Healthy Samples: 429</div>
+                <div className="text-cyan-400 font-semibold mb-2">정상 샘플: 429개</div>
                 <div className="text-slate-400 text-xs">
                   <div>healthy_idle: 201</div>
                   <div>healthy_revving: 228</div>
                 </div>
-                <div className="text-green-400 mt-2 text-xs">Quality: Freesound outliers removed</div>
+                <div className="text-green-400 mt-2 text-xs">품질: Freesound 이상치 제거</div>
               </div>
             </div>
           </div>
 
-          {/* Per-Class Results */}
+          {/* 클래스별 결과 */}
           <div className="bg-purple-900/20 rounded-lg p-4 border border-purple-500/50">
-            <div className="text-purple-400 font-bold mb-3">V15 Per-Class Accuracy (52.4% overall)</div>
+            <div className="text-purple-400 font-bold mb-3">V15 클래스별 정확도 (전체 52.4%)</div>
             <div className="grid grid-cols-4 gap-2">
               {[
-                { cls: 'healthy', acc: 80, color: 'green' },
-                { cls: 'misfire', acc: 53, color: 'cyan' },
-                { cls: 'rattle', acc: 50, color: 'blue' },
-                { cls: 'knock', acc: 48, color: 'yellow' },
+                { cls: 'healthy (정상)', acc: 80, color: 'green' },
+                { cls: 'misfire (실화)', acc: 53, color: 'cyan' },
+                { cls: 'rattle (덜컹)', acc: 50, color: 'blue' },
+                { cls: 'knock (노킹)', acc: 48, color: 'yellow' },
                 { cls: 'wheel_bearing', acc: 46, color: 'orange' },
-                { cls: 'tick', acc: 45, color: 'pink' },
-                { cls: 'whine', acc: 42, color: 'purple' },
-                { cls: 'hiss', acc: 37, color: 'slate' },
-                { cls: 'clunk', acc: 33, color: 'red' },
-                { cls: 'squeal', acc: 33, color: 'red' },
-                { cls: 'grind', acc: 32, color: 'red' },
+                { cls: 'tick (틱)', acc: 45, color: 'pink' },
+                { cls: 'whine (윙)', acc: 42, color: 'purple' },
+                { cls: 'hiss (쉬)', acc: 37, color: 'slate' },
+                { cls: 'clunk (쿵)', acc: 33, color: 'red' },
+                { cls: 'squeal (끽)', acc: 33, color: 'red' },
+                { cls: 'grind (갈림)', acc: 32, color: 'red' },
               ].map((c, i) => (
                 <div key={i} className="bg-slate-900 rounded p-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-300">{c.cls}</span>
+                    <span className="text-slate-300 text-xs">{c.cls}</span>
                     <span className={`font-bold ${c.acc >= 50 ? 'text-green-400' : c.acc >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>{c.acc}%</span>
                   </div>
                   <div className="mt-1 h-1 bg-slate-700 rounded">
@@ -392,32 +398,32 @@
             </div>
           </div>
 
-          {/* Sound Taxonomy */}
+          {/* 소리 분류 체계 */}
           <div className="bg-yellow-900/20 rounded-lg p-4 border border-yellow-500/50">
-            <div className="text-yellow-400 font-bold mb-3">11-Class Sound Taxonomy</div>
+            <div className="text-yellow-400 font-bold mb-3">11클래스 소리 분류 체계</div>
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-red-900/20 border border-red-500/30 rounded p-2">
-                <div className="text-red-400 font-semibold text-xs mb-1">Impulsive</div>
+                <div className="text-red-400 font-semibold text-xs mb-1">충격성</div>
                 <div className="text-slate-400 text-xs">
-                  <div>knock - heavy impacts</div>
-                  <div>tick - rapid clicking</div>
-                  <div>clunk - single thuds</div>
+                  <div>knock - 무거운 충격</div>
+                  <div>tick - 빠른 클릭</div>
+                  <div>clunk - 단발 쿵</div>
                 </div>
               </div>
               <div className="bg-blue-900/20 border border-blue-500/30 rounded p-2">
-                <div className="text-blue-400 font-semibold text-xs mb-1">Tonal</div>
+                <div className="text-blue-400 font-semibold text-xs mb-1">음조성</div>
                 <div className="text-slate-400 text-xs">
-                  <div>whine - gear/bearing tone</div>
-                  <div>squeal - high-pitch friction</div>
-                  <div>misfire - rough pulsing</div>
+                  <div>whine - 기어/베어링 음</div>
+                  <div>squeal - 고음 마찰</div>
+                  <div>misfire - 거친 맥동</div>
                 </div>
               </div>
               <div className="bg-green-900/20 border border-green-500/30 rounded p-2">
-                <div className="text-green-400 font-semibold text-xs mb-1">Noise/Broadband</div>
+                <div className="text-green-400 font-semibold text-xs mb-1">잡음/광대역</div>
                 <div className="text-slate-400 text-xs">
-                  <div>rattle - loose parts</div>
-                  <div>hiss - air/fluid escape</div>
-                  <div>grind - metal-on-metal</div>
+                  <div>rattle - 느슨한 부품</div>
+                  <div>hiss - 공기/유체 누출</div>
+                  <div>grind - 금속간 마찰</div>
                 </div>
               </div>
             </div>
@@ -426,14 +432,14 @@
             </div>
           </div>
 
-          {/* Experiment History */}
+          {/* 실험 이력 */}
           <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-            <div className="text-slate-300 font-bold mb-3">Experiment Leaderboard</div>
+            <div className="text-slate-300 font-bold mb-3">실험 리더보드</div>
             <div className="space-y-1">
               {[
-                { exp: 'AST+CLAP (v15, quality-verified)', acc: '52.4%', best: true },
-                { exp: 'AST+CLAP (v13, expanded)', acc: '51.3%', best: false },
-                { exp: 'AST+CLAP (v11, cleaned)', acc: '48.3%', best: false },
+                { exp: 'AST+CLAP (v15, 품질검증)', acc: '52.4%', best: true },
+                { exp: 'AST+CLAP (v13, 확장)', acc: '51.3%', best: false },
+                { exp: 'AST+CLAP (v11, 정제)', acc: '48.3%', best: false },
                 { exp: 'AST+CLAP (v9, +Freesound)', acc: '42.8%', best: false },
                 { exp: 'CED + AST+CLAP (PCA 256)', acc: '45.6%', best: false },
                 { exp: 'PANNs CNN14 (PCA 512)', acc: '38.5%', best: false },
@@ -450,78 +456,78 @@
       );
     };
 
-    // Pipeline View - Detailed stage breakdown
+    // 파이프라인 뷰 - 상세 단계
     const PipelineView = () => {
       const [expanded, setExpanded] = useState(null);
 
       const stages = [
         {
-          n: '0', title: 'Data Sources', type: 'hybrid', validation: 'validated',
+          n: '0', title: '데이터 소스', type: 'hybrid', validation: 'validated',
           content: (
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="bg-orange-900/30 border border-orange-500/50 rounded p-2 text-center">
                 <div className="text-2xl">📳</div>
-                <div className="text-orange-400 font-medium">Synthetic Vibration</div>
-                <div className="text-slate-400">6,600 signals</div>
-                <div className="text-slate-500">Physics-based</div>
+                <div className="text-orange-400 font-medium">합성 진동</div>
+                <div className="text-slate-400">6,600개 신호</div>
+                <div className="text-slate-500">물리 기반</div>
               </div>
               <div className="bg-cyan-900/30 border border-cyan-500/50 rounded p-2 text-center">
                 <div className="text-2xl">🎤</div>
-                <div className="text-cyan-400 font-medium">YouTube Audio</div>
-                <div className="text-slate-400">2,733 samples</div>
-                <div className="text-slate-500">Quality-verified</div>
+                <div className="text-cyan-400 font-medium">YouTube 오디오</div>
+                <div className="text-slate-400">2,733개 샘플</div>
+                <div className="text-slate-500">품질 검증</div>
               </div>
               <div className="bg-blue-900/30 border border-blue-500/50 rounded p-2 text-center">
                 <div className="text-2xl">📊</div>
                 <div className="text-blue-400 font-medium">OBD-II</div>
                 <div className="text-slate-400">14 PIDs + DTCs</div>
-                <div className="text-slate-500">Synthetic pairing</div>
+                <div className="text-slate-500">합성 페어링</div>
               </div>
             </div>
           ),
         },
         {
-          n: '1', title: 'Vibration Pre-training', type: 'physics', validation: 'new',
+          n: '1', title: '진동 사전학습', type: 'physics', validation: 'new',
           content: (
             <div className="space-y-2 text-xs">
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-orange-900/30 border border-orange-500/50 rounded p-2 text-center">
-                  <div className="text-orange-400 font-semibold">Simulator</div>
-                  <div className="text-slate-400">22 fault types</div>
-                  <div className="text-slate-400">7 engine configs</div>
+                  <div className="text-orange-400 font-semibold">시뮬레이터</div>
+                  <div className="text-slate-400">22개 고장 유형</div>
+                  <div className="text-slate-400">7개 엔진 구성</div>
                 </div>
                 <div className="bg-green-900/30 border border-green-500/50 rounded p-2 text-center">
-                  <div className="text-green-400 font-semibold">Encoder</div>
-                  <div className="text-slate-400">CNN → 256-dim</div>
-                  <div className="text-slate-400">Spectrogram input</div>
+                  <div className="text-green-400 font-semibold">인코더</div>
+                  <div className="text-slate-400">CNN → 256차원</div>
+                  <div className="text-slate-400">스펙트로그램 입력</div>
                 </div>
                 <div className="bg-purple-900/30 border border-purple-500/50 rounded p-2 text-center">
-                  <div className="text-purple-400 font-semibold">Result</div>
+                  <div className="text-purple-400 font-semibold">결과</div>
                   <div className="text-white font-bold">63.9%</div>
-                  <div className="text-slate-400">(realistic physics)</div>
+                  <div className="text-slate-400">(현실적 물리)</div>
                 </div>
               </div>
             </div>
           ),
         },
         {
-          n: '2', title: 'Audio Feature Extraction', type: 'neural', validation: 'validated',
+          n: '2', title: '오디오 특징 추출', type: 'neural', validation: 'validated',
           content: (
             <div className="space-y-2 text-xs">
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-cyan-900/30 border border-cyan-500/50 rounded p-2 text-center">
                   <div className="text-cyan-400 font-semibold">AST</div>
-                  <div className="text-slate-400">768-dim</div>
+                  <div className="text-slate-400">768차원</div>
                   <div className="text-slate-400">16kHz</div>
                 </div>
                 <div className="bg-pink-900/30 border border-pink-500/50 rounded p-2 text-center">
                   <div className="text-pink-400 font-semibold">CLAP</div>
-                  <div className="text-slate-400">3072-dim (multi-scale)</div>
+                  <div className="text-slate-400">3072차원 (멀티스케일)</div>
                   <div className="text-slate-400">48kHz</div>
                 </div>
                 <div className="bg-yellow-900/30 border border-yellow-500/50 rounded p-2 text-center">
-                  <div className="text-yellow-400 font-semibold">Combined</div>
-                  <div className="text-slate-400">3840-dim</div>
+                  <div className="text-yellow-400 font-semibold">결합</div>
+                  <div className="text-slate-400">3840차원</div>
                   <div className="text-slate-400">→ PCA 512</div>
                 </div>
               </div>
@@ -529,17 +535,17 @@
           ),
         },
         {
-          n: '3', title: 'Classification & Anomaly', type: 'hybrid', validation: 'validated',
+          n: '3', title: '분류 & 이상탐지', type: 'hybrid', validation: 'validated',
           content: (
             <div className="space-y-2 text-xs">
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-green-900/30 border border-green-500/50 rounded p-2">
-                  <div className="text-green-400 font-semibold">11-Class Classifier</div>
-                  <div className="text-slate-400">SVM RBF + class weights</div>
-                  <div className="text-white font-bold">52.4% accuracy</div>
+                  <div className="text-green-400 font-semibold">11클래스 분류기</div>
+                  <div className="text-slate-400">SVM RBF + 클래스 가중치</div>
+                  <div className="text-white font-bold">52.4% 정확도</div>
                 </div>
                 <div className="bg-purple-900/30 border border-purple-500/50 rounded p-2">
-                  <div className="text-purple-400 font-semibold">Anomaly Detection</div>
+                  <div className="text-purple-400 font-semibold">이상 탐지</div>
                   <div className="text-slate-400">AST+CLAP + Isolation Forest</div>
                   <div className="text-white font-bold">AUC = 0.777</div>
                 </div>
@@ -548,40 +554,40 @@
           ),
         },
         {
-          n: '4', title: 'Knowledge Graph Query', type: 'symbolic', validation: 'validated',
+          n: '4', title: '지식 그래프 쿼리', type: 'symbolic', validation: 'validated',
           content: (
             <div className="bg-slate-800 rounded p-2 text-xs">
               <div className="flex items-center justify-center gap-2 flex-wrap">
-                <span className="bg-yellow-900/50 border border-yellow-500/50 rounded px-2 py-1 text-yellow-300">EvidenceVector</span>
+                <span className="bg-yellow-900/50 border border-yellow-500/50 rounded px-2 py-1 text-yellow-300">증거벡터</span>
                 <span className="text-slate-500">→</span>
                 <span className="bg-cyan-900/50 border border-cyan-500/50 rounded px-2 py-1 text-cyan-300">KG.query()</span>
                 <span className="text-slate-500">→</span>
-                <span className="bg-green-900/50 border border-green-500/50 rounded px-2 py-1 text-green-300">30 Fault Candidates</span>
+                <span className="bg-green-900/50 border border-green-500/50 rounded px-2 py-1 text-green-300">30개 후보 고장</span>
               </div>
             </div>
           ),
         },
         {
-          n: '5', title: 'Deductive Filtering', type: 'symbolic', validation: 'validated',
+          n: '5', title: '연역적 필터링', type: 'symbolic', validation: 'validated',
           content: (
             <div className="bg-slate-800 rounded p-2 text-xs">
-              <div className="text-green-400 font-semibold mb-1">Hard Constraints (Physics & Logic)</div>
+              <div className="text-green-400 font-semibold mb-1">경성 제약조건 (물리 & 논리)</div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="text-slate-400">• Physics: RPM, Temp, Load, Onset</div>
-                <div className="text-slate-400">• System: Fuel Trims, DTC Logic</div>
+                <div className="text-slate-400">• 물리: RPM, 온도, 부하, 발생시점</div>
+                <div className="text-slate-400">• 시스템: 연료 트림, DTC 논리</div>
               </div>
             </div>
           ),
         },
         {
-          n: '6', title: 'Abductive Ranking', type: 'hybrid', validation: 'validated',
+          n: '6', title: '귀추적 순위화', type: 'hybrid', validation: 'validated',
           content: (
             <div className="bg-slate-800 rounded p-2 text-xs">
-              <div className="text-blue-400 font-semibold mb-1">Bayesian Logic + Reasoning</div>
+              <div className="text-blue-400 font-semibold mb-1">베이지안 논리 + 추론</div>
               <div className="space-y-1">
                 {[
-                  { fault: 'Rod knock', score: '0.85', top: true },
-                  { fault: 'Main bearing', score: '0.12', top: false },
+                  { fault: '로드 노킹', score: '0.85', top: true },
+                  { fault: '메인 베어링', score: '0.12', top: false },
                 ].map((h, i) => (
                   <div key={i} className={`flex justify-between p-1 rounded ${h.top ? 'bg-blue-900/30' : 'bg-slate-900'}`}>
                     <span className={h.top ? 'text-white' : 'text-slate-400'}>{h.fault}</span>
@@ -593,18 +599,18 @@
           ),
         },
         {
-          n: '7', title: 'Output', type: 'hybrid', validation: 'validated', llm: true,
+          n: '7', title: '출력', type: 'hybrid', validation: 'validated', llm: true,
           content: (
             <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-pink-900/20 rounded p-3 border border-pink-500/50 text-xs">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-white font-bold">Rod Bearing Wear</span>
+                <span className="text-white font-bold">로드 베어링 마모</span>
                 <div className="flex items-center gap-2">
                   <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">72%</span>
                   <span className="text-pink-400 text-xs">✨ LLM</span>
                 </div>
               </div>
               <div className="bg-pink-900/20 border border-pink-500/30 rounded p-2 text-pink-200 italic">
-                "The knocking sound, combined with 2x order harmonics, indicates rod bearing clearance..."
+                "노킹 소리와 2x 오더 고조파의 조합은 로드 베어링 간극 증가를 나타냅니다..."
               </div>
             </div>
           ),
@@ -638,25 +644,25 @@
       );
     };
 
-    // Research Log
+    // 연구 로그
     const ResearchLog = () => {
       const items = [
-        { stage: '1', q: 'Synthetic vibration as anchor modality?', status: 'resolved', answer: 'Yes. Physics-based → unlimited data, deterministic fault signatures.' },
-        { stage: '1', q: 'Journal bearing vs rolling element physics?', status: 'resolved', answer: 'CORRECTED: Engine bearings are plain journal, not ball bearings. Impacts at 15° after TDC.' },
-        { stage: '1', q: 'Best vibration encoder accuracy?', status: 'resolved', answer: '81.9% (original), 63.9% (physics-corrected). Realistic = harder but better transfer.' },
-        { stage: '2', q: 'Best audio foundation model combination?', status: 'resolved', answer: 'AST (768d) + CLAP multi-scale (3072d) = 3840d combined → PCA 512 → SVM' },
-        { stage: '2', q: 'Audio classification accuracy ceiling?', status: 'resolved', answer: '52.4% on 11-class (quality-verified data). Healthy=80%, misfire=53%, rattle=50%.' },
-        { stage: '2', q: 'Freesound data quality?', status: 'resolved', answer: 'Mixed. grind/squeal/clunk had >50% outliers. Removed via embedding-based verification.' },
-        { stage: '2', q: 'Synthetic audio generation?', status: 'resolved', answer: 'FAILED. AudioLDM2 causes -1.4% accuracy due to domain shift. Do NOT use.' },
-        { stage: '2', q: 'Anomaly detection AUC?', status: 'resolved', answer: '0.777 with AST+CLAP concatenation + Isolation Forest.' },
-        { stage: '3', q: 'Two-stage pipeline (anomaly → classify)?', status: 'resolved', answer: 'FAILED. 22.9% end-to-end (errors cascade). Use single 11-class model instead.' },
-        { stage: '3', q: 'PANNs CNN14 value-add?', status: 'resolved', answer: '38.5% alone, no improvement when combined with AST+CLAP.' },
-        { stage: '3', q: 'AudioMAE value-add?', status: 'resolved', answer: '31.8%. Self-supervised pretraining does NOT help for this task.' },
-        { stage: '2b', q: '22 fault types coverage?', status: 'resolved', answer: 'Covers all OBD-undetectable faults: engine internal, accessory, turbo, drivetrain, exhaust.' },
-        { stage: '2b', q: 'Operating scenarios needed?', status: 'resolved', answer: '12 scenarios: cold_start, acceleration, deceleration, idle_hunting, city_drive, highway_merge, etc.' },
-        { stage: '5', q: 'E2E Accuracy?', status: 'resolved', answer: '84.2% Recall@3 achieved.' },
-        { stage: '-', q: 'Next step: Transfer vibration → audio?', status: 'open', answer: 'Planned: Fine-tune vibration encoder on real audio embeddings via shared space.' },
-        { stage: '-', q: 'Improve weak classes (grind, squeal, clunk)?', status: 'open', answer: 'Need more high-quality real data. Freesound samples were too generic.' },
+        { stage: '1', q: '합성 진동을 앵커 모달리티로?', status: 'resolved', answer: '예. 물리 기반 → 무제한 데이터, 결정론적 고장 시그니처.' },
+        { stage: '1', q: '저널 베어링 vs 롤링 엘레먼트 물리?', status: 'resolved', answer: '수정됨: 엔진 베어링은 볼 베어링이 아닌 플레인 저널. TDC 후 15°에서 충격.' },
+        { stage: '1', q: '최고 진동 인코더 정확도?', status: 'resolved', answer: '81.9% (원본), 63.9% (물리 보정). 현실적 = 어렵지만 전이 우수.' },
+        { stage: '2', q: '최고 오디오 기반 모델 조합?', status: 'resolved', answer: 'AST (768d) + CLAP 멀티스케일 (3072d) = 3840d 결합 → PCA 512 → SVM' },
+        { stage: '2', q: '오디오 분류 정확도 상한?', status: 'resolved', answer: '52.4% on 11클래스 (품질 검증 데이터). Healthy=80%, misfire=53%, rattle=50%.' },
+        { stage: '2', q: 'Freesound 데이터 품질?', status: 'resolved', answer: '혼합. grind/squeal/clunk는 >50% 이상치. 임베딩 기반 검증으로 제거.' },
+        { stage: '2', q: '합성 오디오 생성?', status: 'resolved', answer: '실패. AudioLDM2는 도메인 시프트로 -1.4% 정확도. 사용 금지.' },
+        { stage: '2', q: '이상 탐지 AUC?', status: 'resolved', answer: 'AST+CLAP 연결 + Isolation Forest로 0.777.' },
+        { stage: '3', q: '2단계 파이프라인 (이상 → 분류)?', status: 'resolved', answer: '실패. 22.9% 종단간 (오류 전파). 대신 단일 11클래스 모델 사용.' },
+        { stage: '3', q: 'PANNs CNN14 부가가치?', status: 'resolved', answer: '단독 38.5%, AST+CLAP와 결합해도 개선 없음.' },
+        { stage: '3', q: 'AudioMAE 부가가치?', status: 'resolved', answer: '31.8%. 자기지도 사전학습은 이 작업에 도움 안됨.' },
+        { stage: '2b', q: '22개 고장 유형 커버리지?', status: 'resolved', answer: 'OBD 미감지 고장 전체: 엔진 내부, 보조장치, 터보, 구동계, 배기.' },
+        { stage: '2b', q: '운전 시나리오 필요?', status: 'resolved', answer: '12개 시나리오: cold_start, acceleration, deceleration, idle_hunting, city_drive, highway_merge 등.' },
+        { stage: '5', q: '종단간 정확도?', status: 'resolved', answer: 'Recall@3 84.2% 달성.' },
+        { stage: '-', q: '다음 단계: 진동 → 오디오 전이?', status: 'open', answer: '계획: 공유 공간으로 실제 오디오 임베딩에 진동 인코더 파인튜닝.' },
+        { stage: '-', q: '약한 클래스 개선 (grind, squeal, clunk)?', status: 'open', answer: '더 높은 품질의 실제 데이터 필요. Freesound 샘플이 너무 일반적.' },
       ];
 
       return (
@@ -670,7 +676,7 @@
                   {item.answer && <div className={item.status === 'resolved' ? 'text-green-400 mt-1' : 'text-yellow-400 mt-1'}>→ {item.answer}</div>}
                 </div>
                 <span className={`px-1.5 py-0.5 rounded text-xs ${item.status === 'resolved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                  {item.status}
+                  {item.status === 'resolved' ? '해결' : '진행중'}
                 </span>
               </div>
             </div>
@@ -685,23 +691,23 @@
       return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 p-4">
           <h1 className="text-xl font-bold text-center mb-1 bg-gradient-to-r from-orange-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            Vehicle Diagnostic Pipeline v6.0
+            차량 진단 파이프라인 v6.0
           </h1>
           <p className="text-center text-slate-500 text-xs mb-4">
-            <span className="text-orange-400">Synthetic Vibration Pre-training</span> •
-            <span className="text-cyan-400"> 52.4% Audio (11-class)</span> •
-            <span className="text-purple-400"> 63.9% Vibration (22-class)</span> •
+            <span className="text-orange-400">합성 진동 사전학습</span> •
+            <span className="text-cyan-400"> 52.4% 오디오 (11클래스)</span> •
+            <span className="text-purple-400"> 63.9% 진동 (22클래스)</span> •
             <span className="text-pink-400"> ✨ LLM</span>
           </p>
 
-          {/* View Toggle */}
+          {/* 뷰 전환 */}
           <div className="flex justify-center gap-1 mb-4 flex-wrap">
             {[
-              { key: 'executive', label: 'Overview' },
-              { key: 'vibration', label: 'Vibration' },
-              { key: 'audio', label: 'Audio' },
-              { key: 'pipeline', label: 'Pipeline' },
-              { key: 'research', label: 'Research Log' }
+              { key: 'executive', label: '개요' },
+              { key: 'vibration', label: '진동' },
+              { key: 'audio', label: '오디오' },
+              { key: 'pipeline', label: '파이프라인' },
+              { key: 'research', label: '연구 로그' }
             ].map(v => (
               <button
                 key={v.key}
@@ -714,15 +720,15 @@
             ))}
           </div>
 
-          {/* Validation Summary */}
+          {/* 검증 요약 */}
           <div className="max-w-3xl mx-auto mb-4 flex justify-center gap-4 text-xs">
             <div className="flex items-center gap-1">
               <span className="text-green-400">●</span>
-              <span className="text-slate-400">8/9 validated</span>
+              <span className="text-slate-400">8/9 검증완료</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-purple-400">●</span>
-              <span className="text-slate-400">1/9 new (vibration pre-training)</span>
+              <span className="text-slate-400">1/9 신규 (진동 사전학습)</span>
             </div>
           </div>
 
@@ -734,17 +740,17 @@
             {view === 'research' && <ResearchLog />}
           </div>
 
-          {/* Compact Legend */}
+          {/* 범례 */}
           <div className="max-w-3xl mx-auto mt-4 pt-3 border-t border-slate-800 flex justify-center gap-4 text-xs text-slate-500">
-            <span><span className="text-purple-400">■</span> Neural</span>
-            <span><span className="text-green-400">■</span> Symbolic</span>
-            <span><span className="text-blue-400">■</span> Hybrid</span>
-            <span><span className="text-orange-400">■</span> Physics</span>
+            <span><span className="text-purple-400">■</span> 신경망</span>
+            <span><span className="text-green-400">■</span> 기호적</span>
+            <span><span className="text-blue-400">■</span> 하이브리드</span>
+            <span><span className="text-orange-400">■</span> 물리기반</span>
             <span><span className="text-pink-400">✨</span> LLM</span>
           </div>
 
           <div className="text-center text-xs text-slate-600 mt-3">
-            v6.0 — Synthetic Vibration Pre-training | Physics-Corrected | 22 Fault Types | Updated: 2026-01-28
+            v6.0 — 합성 진동 사전학습 | 물리 보정 | 22개 고장 유형 | 업데이트: 2026-01-28
           </div>
         </div>
       );
